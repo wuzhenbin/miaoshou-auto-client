@@ -79,6 +79,45 @@ async function attach() {
     return browser
 }
 
+// Keep the former size-template dialog rule: close website notices only, never a form confirmation.
+export async function closeMiaoshouWebsiteDialogs(target: Page) {
+    const dialogs = target.locator(".jx-dialog:visible").filter({ hasNot: target.getByRole("heading", {
+        name: "创建尺码表模板", exact: true,
+    }) })
+    for (let closed = 0; await dialogs.count(); closed++) {
+        if (closed >= 10) throw new Error("网站弹窗持续出现，停止关闭")
+        const dialog = dialogs.last()
+        const headerClose = dialog.locator(".jx-dialog__headerbtn:visible")
+        const close = await headerClose.count() === 1 ? headerClose
+            : dialog.getByRole("button", { name: /^(关闭此对话框|关闭|取消)$/, exact: true })
+        if (await close.count() !== 1 || !await close.isEnabled())
+            throw new Error("网站弹窗没有唯一可用的关闭或取消按钮")
+        const element = await dialog.elementHandle()
+        if (!element) continue
+        try {
+            let clickTimeout: Error | undefined
+            try { await close.click({ timeout: 5000, noWaitAfter: true }) }
+            catch (error) {
+                if (!(error instanceof Error) || error.name !== "TimeoutError") throw error
+                clickTimeout = error
+            }
+            try { await element.waitForElementState("hidden", { timeout: 5000 }) }
+            catch (error) { throw clickTimeout ?? error }
+        } finally { await element.dispose() }
+    }
+}
+
+async function finishLogin(account: string) {
+    if (!page) throw new Error("妙手登录页已关闭")
+    if (page.url().split("?")[0] !== managementUrl)
+        await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
+    try { await closeMiaoshouWebsiteDialogs(page) }
+    catch (error) {
+        return setState("failed", `妙手已登录，但通知弹窗关闭失败：${(error as Error).message}`, account)
+    }
+    return setState("logged_in", "妙手已登录", account)
+}
+
 async function start() {
     if (busy) throw new Error("妙手登录正在进行")
     if (browserMode("sizeTemplate") !== "headless") throw new Error("请先启动妙手无头浏览器")
@@ -96,7 +135,7 @@ async function start() {
             ?? context.pages()[0] ?? await context.newPage()
         await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
         if (await confirmedAccount(credentials.account).catch(() => false))
-            return setState("logged_in", "妙手已登录", credentials.account)
+            return await finishLogin(credentials.account)
         const loginPage = page.locator('input[type="password"]')
         try { await loginPage.waitFor({ state: "visible", timeout: 15000 }) }
         catch {
@@ -104,7 +143,7 @@ async function start() {
             if (account) {
                 if ([account.mobile, account.accountName, account.email]
                     .some(value => matches(credentials.account, value)))
-                    return setState("logged_in", "妙手已登录", credentials.account)
+                    return await finishLogin(credentials.account)
                 return setState("failed", "浏览器已登录其他妙手账号，请先退出该账号", credentials.account)
             }
             return setState("failed", "妙手登录页未加载完成，请重试", credentials.account)
@@ -157,7 +196,7 @@ async function submitCaptcha(code: string) {
         }
         for (let attempt = 0; attempt < 30; attempt++) {
             if (await confirmedAccount(credentials.account).catch(() => false))
-                return setState("logged_in", "妙手已登录", credentials.account)
+                return await finishLogin(credentials.account)
             await page.waitForTimeout(500)
         }
         return setState("failed", "登录结果无法确认，请检查妙手账号", credentials.account)
