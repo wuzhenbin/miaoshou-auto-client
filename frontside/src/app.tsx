@@ -16,6 +16,7 @@ type ConnectionStatus = { state: ConnectionState; account: string | null; creden
 type MiaoshouLogin = { phase: "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown";
     account: string | null; configuredAccount: string | null; message: string; imageVersion: number;
     imageDataUrl: string | null; imageSourceType: "original" | "rendered" | null; savedAccounts: string[] }
+type MiaoshouLoginAction = Omit<MiaoshouLogin, "configuredAccount" | "savedAccounts">
 type AlibabaLogin = { phase: "idle" | "opening" | "waiting_scan" | "scanned" | "verification_required" | "signed_in" | "expired" | "failed";
     message: string; qrAvailable: boolean; smsRetryAfterSeconds: number }
 
@@ -59,6 +60,11 @@ export function App() {
     const [qrVersion, setQrVersion] = useState(0)
     const [loginBusy, setLoginBusy] = useState(false)
     const [loginError, setLoginError] = useState("")
+    const applyMiaoshouLoginAction = (result: MiaoshouLoginAction) => {
+        setMiaoshouLogin(previous => ({ ...result,
+            configuredAccount: previous?.configuredAccount ?? null,
+            savedAccounts: previous?.savedAccounts ?? [] }))
+    }
     useEffect(() => {
         const controller = new AbortController()
         let timer: ReturnType<typeof setTimeout>
@@ -173,7 +179,7 @@ export function App() {
             if (!response.ok) throw new Error(result.error?.message ?? "浏览器窗口打开失败")
             setRevision(value => value + 1)
             if (kind === "sizeTemplate" && miaoshouLogin?.configuredAccount)
-                setMiaoshouLogin(await postLogin("/miaoshou-login/start") as MiaoshouLogin)
+                applyMiaoshouLoginAction(await postLogin("/miaoshou-login/start") as MiaoshouLoginAction)
             if (kind === "shared") setAlibabaLogin(await postLogin("/alibaba-login/start") as AlibabaLogin)
         } catch (cause) { setActionError(cause instanceof Error ? cause.message : "浏览器窗口打开失败") }
         finally { setOpening(null) }
@@ -240,7 +246,7 @@ export function App() {
                     <Button icon={<Edit2 size={15} />} title="修改妙手凭证" aria-label="修改妙手凭证"
                         onClick={() => setEditingLogin(true)} />}
             </div>
-            {!miaoshouLogin?.configuredAccount && Boolean(miaoshouLogin?.savedAccounts.length) &&
+            {!miaoshouLogin?.configuredAccount && Boolean(miaoshouLogin?.savedAccounts?.length) &&
                 <div className="saved-account-row">
                     <label>已保存账号<select value={savedAccount ?? ""}
                         onChange={event => setSavedAccount(event.target.value || undefined)}>
@@ -284,14 +290,14 @@ export function App() {
                             setEditingLogin(false)
                             setRevision(value => value + 1)
                         } else {
-                            setMiaoshouLogin(await postLogin("/miaoshou-login/start") as MiaoshouLogin)
+                            applyMiaoshouLoginAction(await postLogin("/miaoshou-login/start") as MiaoshouLoginAction)
                         }
                     })}>{miaoshouLogin.phase === "logged_in" ? "退出登录" : "登录妙手"}</Button>
             </div>}
             {miaoshouLogin?.phase === "captcha_required" && <div className="login-challenge">
                 <button className="captcha-image" title="刷新验证码" aria-label="刷新验证码" disabled={loginBusy}
                     onClick={() => void loginAction(async () => {
-                        setMiaoshouLogin(await postLogin("/miaoshou-login/captcha/refresh") as MiaoshouLogin)
+                        applyMiaoshouLoginAction(await postLogin("/miaoshou-login/captcha/refresh") as MiaoshouLoginAction)
                         setCaptchaCode("")
                     })}>
                     {miaoshouLogin.imageDataUrl && <img src={miaoshouLogin.imageDataUrl} alt="妙手验证码" />}
@@ -301,7 +307,7 @@ export function App() {
                 <form className="challenge-form" onSubmit={event => {
                     event.preventDefault()
                     void loginAction(async () => {
-                        setMiaoshouLogin(await postLogin("/miaoshou-login/captcha/submit", { code: captchaCode }) as MiaoshouLogin)
+                        applyMiaoshouLoginAction(await postLogin("/miaoshou-login/captcha/submit", { code: captchaCode }) as MiaoshouLoginAction)
                         setCaptchaCode("")
                     })
                 }}><label>验证码<Input value={captchaCode} onChange={event => setCaptchaCode(event.target.value.replace(/\D/g, ""))}
