@@ -1,7 +1,24 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { chromium } from 'playwright'
-import { closeMiaoshouWebsiteDialogs, dismissMiaoshouLoginNotices } from '../src/miaoshou-login.ts'
+import { closeMiaoshouWebsiteDialogs, dismissMiaoshouLoginNotices,
+    isVerifiedMiaoshouPage } from '../src/miaoshou-login.ts'
+
+test('requires the management page and a confirmed account before reporting login success', async () => {
+    const browser = await chromium.launch({ headless: true })
+    try {
+        const page = await browser.newPage()
+        const managementUrl = 'https://erp.91miaoshou.com/pddkj_choice/move_collect/template_management/sizeChart'
+        await page.route(managementUrl, route => route.fulfill({ body: '<main>尺码管理</main>' }))
+        await page.goto(managementUrl)
+        assert.equal(await isVerifiedMiaoshouPage(page, async () => true), true)
+        assert.equal(await isVerifiedMiaoshouPage(page, async () => false), false)
+        await page.setContent('<input type="password">')
+        assert.equal(await isVerifiedMiaoshouPage(page, async () => true), false)
+        await page.goto('about:blank')
+        assert.equal(await isVerifiedMiaoshouPage(page, async () => true), false)
+    } finally { await browser.close() }
+})
 
 test('dismisses a delayed notice without requiring a management button', async () => {
     const browser = await chromium.launch({ headless: true })

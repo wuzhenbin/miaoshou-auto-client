@@ -114,19 +114,35 @@ export async function dismissMiaoshouLoginNotices(target: Page) {
     await closeMiaoshouWebsiteDialogs(target)
 }
 
-async function finishLogin(account: string) {
-    if (!page) throw new Error("妙手登录页已关闭")
-    if (page.url().split("?")[0] !== managementUrl)
-        await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
+async function unconfirmedLogin(account: string) {
     const session = await inspectMiaoshouSession()
     if (session.state === "not_logged_in")
         return setState("failed", "妙手登录状态未保持，请重新登录", account)
-    if (session.state === "unknown")
-        return setState("unknown", "妙手登录状态待确认，请检查网页", account)
+    return setState("unknown", "妙手登录状态待确认，请检查网页", account)
+}
+
+export async function isVerifiedMiaoshouPage(target: Page, verifyAccount: () => Promise<boolean>) {
+    return target.url().split("?")[0] === managementUrl
+        && !await target.locator('input[type="password"]').isVisible().catch(() => false)
+        && await verifyAccount().catch(() => false)
+}
+
+async function finishLogin(account: string, afterSubmission = false) {
+    if (!page) throw new Error("妙手登录页已关闭")
+    if (afterSubmission && page.url().split("?")[0] !== managementUrl)
+        await page.waitForURL(url => `${url.origin}${url.pathname}` === managementUrl,
+            { waitUntil: "domcontentloaded", timeout: 8000 }).catch(() => {})
+    if (!await confirmedAccount(account).catch(() => false)) return await unconfirmedLogin(account)
+    if (page.url().split("?")[0] !== managementUrl)
+        await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
+    if (!await isVerifiedMiaoshouPage(page, () => confirmedAccount(account)))
+        return await unconfirmedLogin(account)
     try { await dismissMiaoshouLoginNotices(page) }
     catch (error) {
         return setState("failed", `妙手已登录，但通知弹窗关闭失败：${(error as Error).message}`, account)
     }
+    if (!await isVerifiedMiaoshouPage(page, () => confirmedAccount(account)))
+        return await unconfirmedLogin(account)
     return setState("logged_in", "妙手已登录", account)
 }
 
@@ -208,7 +224,7 @@ async function submitCaptcha(code: string) {
         }
         for (let attempt = 0; attempt < 30; attempt++) {
             if (await confirmedAccount(credentials.account).catch(() => false))
-                return await finishLogin(credentials.account)
+                return await finishLogin(credentials.account, true)
             await page.waitForTimeout(500)
         }
         return setState("failed", "登录结果无法确认，请检查妙手账号", credentials.account)
