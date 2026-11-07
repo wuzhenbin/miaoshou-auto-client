@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Edit2, Maximize2, Minimize2, RefreshCw } from "react-feather"
+import { Edit2, Play, RefreshCw, Trash2 } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -13,6 +13,10 @@ type BrowserStatus = { sizeTemplate: BrowserState; shared: BrowserState; modes: 
 type ConnectionState = "credentials_required" | "login_required" | "unsupported_account" | "connecting"
     | "online" | "offline" | "unauthorized" | "unavailable" | "queue_conflict"
 type ConnectionStatus = { state: ConnectionState; account: string | null; credentialsSet: boolean }
+type MiaoshouLogin = { phase: "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed";
+    account: string | null; configuredAccount: string | null; message: string; imageVersion: number }
+type AlibabaLogin = { phase: "idle" | "opening" | "waiting_scan" | "scanned" | "verification_required" | "signed_in" | "expired" | "failed";
+    message: string; qrAvailable: boolean; smsRetryAfterSeconds: number }
 
 const labels: Record<BrowserState, { text: string; color: string }> = {
     running: { text: "已启动", color: "success" },
@@ -43,6 +47,16 @@ export function App() {
     const [password, setPassword] = useState("")
     const [editingCredentials, setEditingCredentials] = useState(false)
     const [submittingCredentials, setSubmittingCredentials] = useState(false)
+    const [miaoshouLogin, setMiaoshouLogin] = useState<MiaoshouLogin | null>(null)
+    const [alibabaLogin, setAlibabaLogin] = useState<AlibabaLogin | null>(null)
+    const [loginAccount, setLoginAccount] = useState("")
+    const [loginPassword, setLoginPassword] = useState("")
+    const [editingLogin, setEditingLogin] = useState(false)
+    const [captchaCode, setCaptchaCode] = useState("")
+    const [smsCode, setSmsCode] = useState("")
+    const [qrVersion, setQrVersion] = useState(0)
+    const [loginBusy, setLoginBusy] = useState(false)
+    const [loginError, setLoginError] = useState("")
     useEffect(() => {
         const controller = new AbortController()
         let timer: ReturnType<typeof setTimeout>
@@ -92,6 +106,43 @@ export function App() {
         void refresh()
         return () => { controller.abort(); clearTimeout(timer) }
     }, [])
+    useEffect(() => {
+        const controller = new AbortController()
+        let timer: ReturnType<typeof setTimeout>
+        const refresh = async () => {
+            try {
+                const [miaoshou, alibaba] = await Promise.all([
+                    fetch("/miaoshou-login/status", { cache: "no-store", signal: controller.signal }),
+                    fetch("/alibaba-login/status", { cache: "no-store", signal: controller.signal }),
+                ])
+                if (!miaoshou.ok || !alibaba.ok) throw new Error("登录状态读取失败")
+                const nextMiaoshou = await miaoshou.json() as MiaoshouLogin
+                const nextAlibaba = await alibaba.json() as AlibabaLogin
+                if (!controller.signal.aborted) {
+                    setMiaoshouLogin(nextMiaoshou)
+                    setAlibabaLogin(nextAlibaba)
+                    if (nextAlibaba.phase === "waiting_scan" && nextAlibaba.qrAvailable) setQrVersion(value => value + 1)
+                }
+            } catch { /* Browser status remains available while a login page is loading. */ }
+            finally { if (!controller.signal.aborted) timer = setTimeout(() => void refresh(), 3000) }
+        }
+        void refresh()
+        return () => { controller.abort(); clearTimeout(timer) }
+    }, [])
+    const postLogin = async (url: string, body?: object, method = "POST") => {
+        const response = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : undefined,
+            body: body ? JSON.stringify(body) : undefined })
+        const result = await response.json() as { error?: { message?: string } }
+        if (!response.ok) throw new Error(result.error?.message ?? "登录操作失败")
+        return result
+    }
+    const loginAction = async (action: () => Promise<void>) => {
+        setLoginBusy(true)
+        setLoginError("")
+        try { await action() }
+        catch (cause) { setLoginError(cause instanceof Error ? cause.message : "登录操作失败") }
+        finally { setLoginBusy(false) }
+    }
     const submitCredentials = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         setSubmittingCredentials(true)
@@ -110,14 +161,17 @@ export function App() {
     const stateTag = (value?: BrowserState) => <Tag color={value ? labels[value].color : error ? "warning" : "processing"}>
         {value ? labels[value].text : error ? "待确认" : "读取中"}
     </Tag>
-    const changeWindow = async (kind: BrowserKind, action: "open-visible" | "minimize") => {
+    const changeWindow = async (kind: BrowserKind) => {
         setOpening(kind)
         setActionError("")
         try {
-            const response = await fetch(`/automation-browsers/${kind}/${action}`, { method: "POST" })
+            const response = await fetch(`/automation-browsers/${kind}/start-headless`, { method: "POST" })
             const result = await response.json() as { error?: { message?: string } }
             if (!response.ok) throw new Error(result.error?.message ?? "浏览器窗口打开失败")
             setRevision(value => value + 1)
+            if (kind === "sizeTemplate" && miaoshouLogin?.configuredAccount)
+                setMiaoshouLogin(await postLogin("/miaoshou-login/start") as MiaoshouLogin)
+            if (kind === "shared") setAlibabaLogin(await postLogin("/alibaba-login/start") as AlibabaLogin)
         } catch (cause) { setActionError(cause instanceof Error ? cause.message : "浏览器窗口打开失败") }
         finally { setOpening(null) }
     }
@@ -125,18 +179,16 @@ export function App() {
         const mode = status?.modes[kind]
         const inspection = status?.inspections[kind]
         const session = inspection?.session
-        const isOpen = mode === "visible" && inspection?.window === "open"
-        const action = isOpen ? "minimize" : "open-visible"
-        const sessionLabel = mode !== "visible" || status?.[kind] !== "running" ? "未检查"
+        const sessionLabel = !["visible", "headless"].includes(mode ?? "") || status?.[kind] !== "running" ? "未检查"
             : session?.state === "logged_in" ? kind === "sizeTemplate" ? `已登录：${session.account}` : "已登录"
             : session?.state === "not_logged_in" ? "未登录" : "登录待确认"
         return <div className="browser-row" key={kind}>
             <strong>{name}</strong>{stateTag(status?.[kind])}
             <span className="session-state" title={sessionLabel}>{sessionLabel}</span>
-            <Button loading={opening === kind} disabled={opening !== null || !mode || mode === "headless" || mode === "unmanaged"}
-                icon={isOpen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-                onClick={() => void changeWindow(kind, action)}>{isOpen ? "收起" : "打开"}</Button>
-            {mode === "headless" && <span className="browser-note">无头实例运行中，请先在任务空闲后关闭</span>}
+            <Button loading={opening === kind} disabled={opening !== null || !mode || mode !== "stopped"}
+                icon={<Play size={15} />} onClick={() => void changeWindow(kind)}>启动</Button>
+            {mode === "headless" && <span className="browser-note">无头浏览器运行中</span>}
+            {mode === "visible" && <span className="browser-note">可见实例运行中，请先在任务空闲后关闭</span>}
             {mode === "unmanaged" && <span className="browser-note">端口由其他进程占用</span>}
         </div>
     }
@@ -150,6 +202,85 @@ export function App() {
             {browserRow("shared", "通用自动化")}
             {error && <Alert type="warning" showIcon title={error} description="当前启动状态待确认。" />}
             {actionError && <Alert type="error" showIcon title={actionError} />}
+        </section>
+        <section aria-label="妙手登录">
+            <div className="section-title"><h2>妙手登录</h2></div>
+            <div className="connection-row">
+                <Tag color={miaoshouLogin?.phase === "logged_in" ? "success" : miaoshouLogin?.phase === "failed" ? "error" : "warning"}>
+                    {miaoshouLogin?.phase === "logged_in" ? "已登录" : miaoshouLogin?.phase === "captcha_required" ? "等待验证码" : "未登录"}
+                </Tag>
+                <span>{miaoshouLogin?.message ?? "读取中"}</span>
+                {miaoshouLogin?.configuredAccount && !editingLogin &&
+                    <Button icon={<Edit2 size={15} />} title="修改妙手凭证" aria-label="修改妙手凭证"
+                        onClick={() => setEditingLogin(true)} />}
+            </div>
+            {(!miaoshouLogin?.configuredAccount || editingLogin) &&
+                <form className="credentials-form" onSubmit={event => {
+                    event.preventDefault()
+                    void loginAction(async () => {
+                        const result = await postLogin("/miaoshou-login/credentials", { account: loginAccount, password: loginPassword }, "PUT")
+                        setMiaoshouLogin(value => value ? { ...value, configuredAccount: (result as { configuredAccount: string }).configuredAccount } : value)
+                        setLoginPassword("")
+                        setEditingLogin(false)
+                    })
+                }}>
+                    <label>妙手账号<Input value={loginAccount} onChange={event => setLoginAccount(event.target.value)} required maxLength={128} /></label>
+                    <label>妙手密码<Input.Password value={loginPassword} onChange={event => setLoginPassword(event.target.value)} required maxLength={256} /></label>
+                    <Button type="primary" htmlType="submit" loading={loginBusy}>保存</Button>
+                </form>}
+            {miaoshouLogin?.configuredAccount && <div className="login-actions">
+                <span>{miaoshouLogin.configuredAccount}</span>
+                <Button loading={loginBusy} disabled={status?.modes.sizeTemplate !== "headless"} onClick={() => void loginAction(async () => {
+                    setMiaoshouLogin(await postLogin("/miaoshou-login/start") as MiaoshouLogin)
+                })}>登录妙手</Button>
+                <Button icon={<Trash2 size={15} />} title="移除妙手凭证" aria-label="移除妙手凭证"
+                    disabled={loginBusy} onClick={() => void loginAction(async () => {
+                        await postLogin("/miaoshou-login/credentials", undefined, "DELETE")
+                        setMiaoshouLogin(value => value ? { ...value, configuredAccount: null } : value)
+                    })} />
+            </div>}
+            {miaoshouLogin?.phase === "captcha_required" && <div className="login-challenge">
+                <button className="captcha-image" title="刷新验证码" aria-label="刷新验证码" disabled={loginBusy}
+                    onClick={() => void loginAction(async () => {
+                        setMiaoshouLogin(await postLogin("/miaoshou-login/captcha/refresh") as MiaoshouLogin)
+                        setCaptchaCode("")
+                    })}>
+                    <img src={`/miaoshou-login/captcha/image?v=${miaoshouLogin.imageVersion}`} alt="妙手验证码" />
+                </button>
+                <form className="challenge-form" onSubmit={event => {
+                    event.preventDefault()
+                    void loginAction(async () => {
+                        setMiaoshouLogin(await postLogin("/miaoshou-login/captcha/submit", { code: captchaCode }) as MiaoshouLogin)
+                        setCaptchaCode("")
+                    })
+                }}><label>验证码<Input value={captchaCode} onChange={event => setCaptchaCode(event.target.value.replace(/\D/g, ""))}
+                    inputMode="numeric" maxLength={4} required /></label><Button type="primary" htmlType="submit" loading={loginBusy}>确认</Button></form>
+            </div>}
+            {loginError && <Alert type="error" showIcon title={loginError} />}
+        </section>
+        <section aria-label="1688 登录">
+            <div className="section-title"><h2>1688 登录</h2></div>
+            <div className="connection-row"><Tag color={alibabaLogin?.phase === "signed_in" ? "success" : "warning"}>
+                {alibabaLogin?.phase === "signed_in" ? "已登录" : alibabaLogin?.phase === "verification_required" ? "待验证" : "未登录"}
+            </Tag><span>{alibabaLogin?.message ?? "读取中"}</span>
+                <Button icon={<RefreshCw size={15} />} disabled={status?.modes.shared !== "headless" || loginBusy}
+                    onClick={() => void loginAction(async () => setAlibabaLogin(await postLogin("/alibaba-login/start") as AlibabaLogin))}
+                    title="刷新 1688 二维码">刷新</Button></div>
+            {alibabaLogin?.phase === "waiting_scan" && alibabaLogin.qrAvailable &&
+                <img className="qr-image" src={`/alibaba-login/qr?v=${qrVersion}`} alt="1688 登录二维码" />}
+            {alibabaLogin?.phase === "verification_required" && <div className="login-actions">
+                <Button disabled={loginBusy || alibabaLogin.smsRetryAfterSeconds > 0} onClick={() => void loginAction(async () =>
+                    setAlibabaLogin(await postLogin("/alibaba-login/sms/request") as AlibabaLogin))}>
+                    {alibabaLogin.smsRetryAfterSeconds > 0 ? `${alibabaLogin.smsRetryAfterSeconds} 秒后重发` : "获取短信验证码"}</Button>
+                <form className="challenge-form" onSubmit={event => {
+                    event.preventDefault()
+                    void loginAction(async () => {
+                        setAlibabaLogin(await postLogin("/alibaba-login/sms/verify", { code: smsCode }) as AlibabaLogin)
+                        setSmsCode("")
+                    })
+                }}><label>短信验证码<Input value={smsCode} onChange={event => setSmsCode(event.target.value.replace(/\D/g, ""))}
+                    inputMode="numeric" maxLength={8} required /></label><Button type="primary" htmlType="submit" loading={loginBusy}>确认</Button></form>
+            </div>}
         </section>
         <section aria-label="业务连接">
             <div className="section-title"><h2>业务连接</h2></div>

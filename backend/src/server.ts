@@ -9,6 +9,15 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT m
 const connection = createConnectionManager()
 const app = buildApp(undefined, connection)
 app.addHook("onClose", async () => { connection.close() })
+let stopping = false
+for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => {
+    if (stopping) return
+    stopping = true
+    void app.close().then(() => { process.exitCode = 0 }, error => {
+        console.error(error)
+        process.exitCode = 1
+    })
+})
 app.listen({ host, port }).catch(error => {
     console.error(error)
     process.exitCode = 1

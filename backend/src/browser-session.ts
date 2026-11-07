@@ -4,6 +4,7 @@ import { join } from "node:path"
 import type { BrowserContext } from "playwright"
 
 type StoredCookie = Awaited<ReturnType<BrowserContext["cookies"]>>[number]
+export type MiaoshouCredentials = { account: string; password: string }
 const cookieUrl = "https://erp.91miaoshou.com"
 const sessionDir = "browser-sessions"
 let lastSavedCookies = ""
@@ -70,6 +71,43 @@ export async function restoreMiaoshouSession(root: string, context: BrowserConte
 export async function clearMiaoshouSession(root: string) {
     lastSavedCookies = ""
     await unlink(join(root, sessionDir, "miaoshou.json")).catch(error => {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+    })
+}
+
+export async function saveMiaoshouCredentials(root: string, credentials: MiaoshouCredentials) {
+    const directory = join(root, sessionDir)
+    await mkdir(directory, { recursive: true, mode: 0o700 })
+    const key = await sessionKey(directory, true)
+    if (key.length !== 32) throw new Error("浏览器会话密钥无效")
+    const iv = randomBytes(12)
+    const cipher = createCipheriv("aes-256-gcm", key, iv)
+    const data = Buffer.concat([cipher.update(JSON.stringify(credentials)), cipher.final()])
+    const pending = join(directory, "miaoshou-credentials.json.tmp")
+    await writeFile(pending, JSON.stringify({ iv: iv.toString("base64"), tag: cipher.getAuthTag().toString("base64"),
+        data: data.toString("base64") }), { mode: 0o600 })
+    await rename(pending, join(directory, "miaoshou-credentials.json"))
+}
+
+export async function loadMiaoshouCredentials(root: string): Promise<MiaoshouCredentials | null> {
+    const directory = join(root, sessionDir)
+    try {
+        const key = await sessionKey(directory, false)
+        if (key.length !== 32) throw new Error("妙手凭证密钥无效")
+        const payload = JSON.parse(await readFile(join(directory, "miaoshou-credentials.json"), "utf8")) as Record<string, string>
+        const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(payload.iv, "base64"))
+        decipher.setAuthTag(Buffer.from(payload.tag, "base64"))
+        const value = JSON.parse(Buffer.concat([decipher.update(Buffer.from(payload.data, "base64")), decipher.final()]).toString()) as MiaoshouCredentials
+        if (typeof value.account !== "string" || typeof value.password !== "string") throw new Error("妙手凭证无效")
+        return value
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return null
+        throw error
+    }
+}
+
+export async function clearMiaoshouCredentials(root: string) {
+    await unlink(join(root, sessionDir, "miaoshou-credentials.json")).catch(error => {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
     })
 }

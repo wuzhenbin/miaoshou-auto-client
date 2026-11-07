@@ -17,9 +17,10 @@ const settings: Record<BrowserKind, { name: string; port: number; profile: strin
         startUrl: "https://login.1688.com/member/signin.htm" },
 }
 const opening = new Set<BrowserKind>()
+const ownedBrowsers = new Set<number>()
 let savingSession = false
 
-function runtimeRoot() {
+export function runtimeRoot() {
     const root = process.env.MIAOSHOU_RUNTIME_DIR?.trim() || join(homedir(), ".miaoshou-auto")
     if (!isAbsolute(root)) throw new Error("运行数据目录必须为绝对路径")
     return root
@@ -57,11 +58,12 @@ export function browserMode(kind: BrowserKind): BrowserMode {
     return /(?:^| )--headless(?:=\S+)?(?: |$)/.test(command) ? "headless" : "visible"
 }
 
-async function openVisible(kind: BrowserKind) {
+async function openBrowser(kind: BrowserKind, headless = false) {
     const setting = settings[kind]
     assertLocalCdp(kind)
     const mode = browserMode(kind)
-    if (mode === "visible") {
+    if (mode === "headless" && headless) return
+    if (mode === "visible" && !headless) {
         await setWindowVisibility(kind, "open")
         return
     }
@@ -79,23 +81,24 @@ async function openVisible(kind: BrowserKind) {
         child = spawn(executable, [
             `--user-data-dir=${join(root, "browser-profiles", setting.profile)}`,
             "--no-first-run", "--no-default-browser-check", ...(kind === "shared" ? ["--restore-last-session"] : []),
-            "--window-size=1440,900",
+            "--window-size=1440,900", ...(headless ? ["--headless=new"] : []),
             "--disable-background-timer-throttling", "--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding",
             "--remote-debugging-address=127.0.0.1", `--remote-debugging-port=${setting.port}`,
-            kind === "sizeTemplate" ? "about:blank" : setting.startUrl,
+            kind === "sizeTemplate" || headless ? "about:blank" : setting.startUrl,
         ], { detached: true, stdio: ["ignore", fd, fd] })
     } finally { closeSync(fd) }
     let launchError: Error | null = null
     let exited = false
     child.on("error", error => { launchError = error })
-    child.on("exit", () => { exited = true })
+    child.on("exit", () => { exited = true; if (child.pid) ownedBrowsers.delete(child.pid) })
     child.unref()
+    if (headless && child.pid) ownedBrowsers.add(child.pid)
     for (let attempt = 0; attempt < 40; attempt++) {
         await delay(200)
         if (launchError) throw launchError
         if (exited) throw new Error(`浏览器启动后退出，请查看日志：${logPath}`)
         const current = browserMode(kind)
-        if (current === "visible") {
+        if (current === (headless ? "headless" : "visible")) {
             if (kind === "sizeTemplate") {
                 const browser = await chromium.connectOverCDP(`http://127.0.0.1:${setting.port}`)
                 try {
@@ -112,6 +115,20 @@ async function openVisible(kind: BrowserKind) {
         if (current !== "stopped") throw new Error(`端口被其他进程占用，请查看日志：${logPath}`)
     }
     throw new Error(`未确认浏览器窗口启动，请查看日志：${logPath}`)
+}
+
+export async function closeOwnedBrowsers() {
+    for (const kind of ["sizeTemplate", "shared"] as const) {
+        const pids = listener(settings[kind].port)
+        if (!pids.some(pid => ownedBrowsers.has(Number(pid)))) continue
+        const browser = await chromium.connectOverCDP(`http://127.0.0.1:${settings[kind].port}`, { timeout: 3000 }).catch(() => null)
+        if (!browser) continue
+        try {
+            const cdp = await browser.newBrowserCDPSession()
+            await cdp.send("Browser.close")
+        } catch { /* The browser may already have exited. */ }
+    }
+    ownedBrowsers.clear()
 }
 
 function assertLocalCdp(kind: BrowserKind) {
@@ -141,7 +158,8 @@ export function registerVisibleBrowserRoutes(app: FastifyInstance) {
     }, 2000)
     sessionTimer.unref()
     app.addHook("onClose", async () => { clearInterval(sessionTimer) })
-    for (const action of ["open-visible", "minimize"] as const) app.post<{ Params: { kind: BrowserKind } }>(`/automation-browsers/:kind/${action}`, async (request, reply) => {
+    app.addHook("onClose", closeOwnedBrowsers)
+    for (const action of ["open-visible", "start-headless", "minimize"] as const) app.post<{ Params: { kind: BrowserKind } }>(`/automation-browsers/:kind/${action}`, async (request, reply) => {
         reply.header("Cache-Control", "no-store")
         const kind = request.params.kind
         if (kind !== "sizeTemplate" && kind !== "shared")
@@ -151,13 +169,14 @@ export function registerVisibleBrowserRoutes(app: FastifyInstance) {
         if (opening.has(kind)) return reply.code(409).send({ error: { message: "浏览器正在启动" } })
         opening.add(kind)
         try {
-            if (action === "open-visible") await openVisible(kind)
+            if (action === "open-visible" || action === "start-headless") await openBrowser(kind, action === "start-headless")
             else {
                 assertLocalCdp(kind)
                 if (browserMode(kind) !== "visible") throw new Error("可见浏览器未运行")
                 await setWindowVisibility(kind, "minimized")
             }
-            return { kind, mode: "visible", message: `${settings[kind].name}浏览器窗口已${action === "open-visible" ? "打开" : "收起"}` }
+            return { kind, mode: action === "start-headless" ? "headless" : "visible",
+                message: `${settings[kind].name}浏览器${action === "start-headless" ? "已启动" : action === "open-visible" ? "窗口已打开" : "窗口已收起"}` }
         } catch (error) {
             const message = error instanceof Error ? error.message : "浏览器启动失败"
             return reply.code(409).send({ error: { message } })

@@ -20,6 +20,16 @@ section .ant-alert { margin-top: 18px; }
 .credentials-form { display: flex; align-items: end; gap: 12px; padding-top: 18px; }
 .credentials-form label { display: grid; gap: 6px; flex: 1; min-width: 0; color: #435158; font-size: 13px; }
 .credentials-form button { flex: none; }
+.login-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 16px; }
+.login-actions span { color: #435158; min-width: 0; overflow-wrap: anywhere; }
+.login-challenge { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; padding-top: 16px; }
+.captcha-image { display: block; padding: 0; border: 1px solid #c7d1d5; border-radius: 4px; background: #fff; cursor: pointer; min-width: 124px; min-height: 44px; }
+.captcha-image img { display: block; max-width: 240px; height: auto; }
+.challenge-form { display: flex; align-items: end; gap: 12px; }
+.challenge-form label { display: grid; gap: 6px; color: #435158; font-size: 13px; }
+.challenge-form input { width: 150px; }
+.qr-image { display: block; width: 200px; height: 200px; object-fit: contain; margin-top: 16px; border: 1px solid #e0e4e6; background: #fff; }
 @media (max-width: 700px) { .browser-row { grid-template-columns: minmax(0, 1fr) 84px 100px; gap: 8px; } .session-state { grid-column: 1 / -2; padding-bottom: 10px; } .browser-row button { grid-column: 3; grid-row: 1 / 3; } }
 @media (max-width: 500px) { .workspace { padding-top: 24px; } h1 { font-size: 24px; } .browser-row { grid-template-columns: minmax(0, 1fr) 84px; } .session-state { grid-column: 1 / -1; padding-bottom: 0; } .browser-row button { grid-column: 1 / -1; grid-row: auto; justify-self: start; margin-bottom: 10px; } }
 @media (max-width: 600px) { .credentials-form { display: grid; } .credentials-form button { width: 100%; } }
+@media (max-width: 500px) { .challenge-form { width: 100%; } .challenge-form label { flex: 1; } .challenge-form input { width: 100%; } }
