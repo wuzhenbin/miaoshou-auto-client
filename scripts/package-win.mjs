@@ -73,7 +73,6 @@ async function main() {
         cpSync(join(clientDir, 'scripts', 'start-release.mjs'), join(stage, 'launcher.mjs'))
         writeFileSync(join(stage, 'start.cmd'), readFileSync(join(clientDir, 'scripts', 'start-release.cmd'), 'utf8').replace(/\r?\n/g, '\r\n'))
         cpSync(join(clientDir, 'scripts', 'release-readme.txt'), join(stage, 'README.txt'))
-        cpSync(join(clientDir, 'backend', '.env.example'), join(stage, 'client.env.example'))
         const forbidden = ['backend/src/', 'frontside/src/', '.ts', '.tsx', '.map']
         const firstParty = filesUnder(stage).map(path => relative(stage, path).replaceAll('\\', '/'))
             .filter(path => !path.startsWith('backend/node_modules/'))

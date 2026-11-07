@@ -11,20 +11,20 @@ const heartbeatMs = 10_000
 const reconnectMs = 30_000
 const ackTimeoutMs = 25_000
 
-export function startOnlineClient() {
-    const base = process.env.BUSINESS_BACKEND_URL?.trim() || "http://127.0.0.1:3000/"
+export type OnlineConnectionState = "online" | "offline" | "unauthorized" | "unavailable"
+export type OnlineClientOptions = { base: string; basicUsername: string; basicPassword: string;
+    onStatus: (state: OnlineConnectionState) => void }
+
+export function startOnlineClient({ base, basicUsername, basicPassword, onStatus }: OnlineClientOptions) {
     const target = new URL("auth/online-client/heartbeat", `${base.replace(/\/+$/, "")}/`)
     const resultTarget = new URL("auth/online-client/result", `${base.replace(/\/+$/, "")}/`)
     const websocketTarget = new URL("auth/online-client/ws", `${base.replace(/\/+$/, "")}/`)
     if (!onlineCommandStore.bindTarget(target.origin + target.pathname))
         throw new Error("在线命令队列仍有未确认命令，不能切换业务后端地址")
     websocketTarget.protocol = target.protocol === "https:" ? "wss:" : "ws:"
-    const basicUser = process.env.BUSINESS_BACKEND_BASIC_USERNAME?.trim()
-    const basicPassword = process.env.BUSINESS_BACKEND_BASIC_PASSWORD
-    if ((basicUser || basicPassword) && (!basicUser || !basicPassword)) throw new Error("公网入口 Basic 认证配置不完整")
     if (!["http:", "https:"].includes(target.protocol)) throw new Error("业务后端地址必须使用 HTTP 或 HTTPS")
-    const headers: Record<string, string> = { "Content-Type": "application/json" }
-    if (basicUser && basicPassword) headers.Authorization = `Basic ${Buffer.from(`${basicUser}:${basicPassword}`).toString("base64")}`
+    const headers: Record<string, string> = { "Content-Type": "application/json",
+        Authorization: `Basic ${Buffer.from(`${basicUsername}:${basicPassword}`).toString("base64")}` }
     let stopped = false
     let busy = false
     let socket: WebSocket | null = null
@@ -67,6 +67,7 @@ export function startOnlineClient() {
                 const message = JSON.parse(raw.toString()) as { online?: unknown; type?: string; sizeTemplateConcurrency?: unknown }
                 if (typeof message.online === "boolean") {
                     lastAckAt = Date.now()
+                    onStatus(message.online ? "online" : "offline")
                     sizeTemplateConcurrency = message.online && Number.isSafeInteger(message.sizeTemplateConcurrency)
                         && Number(message.sizeTemplateConcurrency) >= 1 && Number(message.sizeTemplateConcurrency) <= 10
                         ? Number(message.sizeTemplateConcurrency) : 0
@@ -83,7 +84,7 @@ export function startOnlineClient() {
                 executeCommand(message)
             } catch { /* An invalid acknowledgement will eventually trigger HTTP fallback. */ }
         })
-        connection.on("error", () => {})
+        connection.on("error", () => { onStatus("unavailable") })
         connection.on("close", () => {
             if (socket === connection) socket = null
             sizeTemplateConcurrency = 0
@@ -109,16 +110,20 @@ export function startOnlineClient() {
             }
             if (socket?.readyState === WebSocket.OPEN) socket.terminate()
             const response = await fetch(target, { method: "POST", headers, body, signal: AbortSignal.timeout(8000) })
-            if (!response.ok) console.warn(`在线客户端 HTTP 报到失败：HTTP ${response.status}`)
+            if (!response.ok) {
+                onStatus(response.status === 401 ? "unauthorized" : "unavailable")
+                console.warn(`在线客户端 HTTP 报到失败：HTTP ${response.status}`)
+            }
             else {
                 const received = await response.json() as { command?: StoredCommand; commands?: StoredCommand[]; sizeTemplateConcurrency?: number }
+                onStatus((received as { online?: boolean }).online ? "online" : "offline")
                 sizeTemplateConcurrency = Number.isSafeInteger(received.sizeTemplateConcurrency)
                     && received.sizeTemplateConcurrency! >= 1 && received.sizeTemplateConcurrency! <= 10
                     ? received.sizeTemplateConcurrency! : 0
                 for (const command of received.commands ?? (received.command ? [received.command] : [])) executeCommand(command)
                 void deliverResults()
             }
-        } catch (error) { console.warn("在线客户端报到失败", error) }
+        } catch (error) { onStatus("unavailable"); console.warn("在线客户端报到失败", error) }
         finally { busy = false }
     }
     const timer = setInterval(() => void heartbeat(), heartbeatMs)

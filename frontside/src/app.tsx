@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import { Alert, Button, Tag } from "antd"
-import { Maximize2, Minimize2, RefreshCw } from "react-feather"
+import { Alert, Button, Input, Tag } from "antd"
+import { Edit2, Maximize2, Minimize2, RefreshCw } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -10,11 +10,25 @@ type LoginState = "logged_in" | "not_logged_in" | "unknown"
 type BrowserInspection = { window: WindowState; session: { state: LoginState; account: string | null } }
 type BrowserStatus = { sizeTemplate: BrowserState; shared: BrowserState; modes: Record<BrowserKind, BrowserMode>;
     inspections: Record<BrowserKind, BrowserInspection>; checkedAt: string }
+type ConnectionState = "credentials_required" | "login_required" | "unsupported_account" | "connecting"
+    | "online" | "offline" | "unauthorized" | "unavailable" | "queue_conflict"
+type ConnectionStatus = { state: ConnectionState; account: string | null; credentialsSet: boolean }
 
 const labels: Record<BrowserState, { text: string; color: string }> = {
     running: { text: "已启动", color: "success" },
     stopped: { text: "未启动", color: "default" },
     unknown: { text: "待确认", color: "warning" },
+}
+const connectionLabels: Record<ConnectionState, { text: string; color: string }> = {
+    credentials_required: { text: "未连接", color: "default" },
+    login_required: { text: "等待妙手登录", color: "warning" },
+    unsupported_account: { text: "账号未接入", color: "error" },
+    connecting: { text: "连接中", color: "processing" },
+    online: { text: "在线", color: "success" },
+    offline: { text: "离线", color: "warning" },
+    unauthorized: { text: "入口认证失败", color: "error" },
+    unavailable: { text: "连接失败", color: "error" },
+    queue_conflict: { text: "待处理命令未确认", color: "error" },
 }
 
 export function App() {
@@ -23,6 +37,12 @@ export function App() {
     const [revision, setRevision] = useState(0)
     const [opening, setOpening] = useState<BrowserKind | null>(null)
     const [actionError, setActionError] = useState("")
+    const [connection, setConnection] = useState<ConnectionStatus | null>(null)
+    const [connectionError, setConnectionError] = useState("")
+    const [username, setUsername] = useState("")
+    const [password, setPassword] = useState("")
+    const [editingCredentials, setEditingCredentials] = useState(false)
+    const [submittingCredentials, setSubmittingCredentials] = useState(false)
     useEffect(() => {
         const controller = new AbortController()
         let timer: ReturnType<typeof setTimeout>
@@ -54,6 +74,39 @@ export function App() {
         void refresh()
         return () => { controller.abort(); clearTimeout(timer) }
     }, [revision])
+    useEffect(() => {
+        const controller = new AbortController()
+        let timer: ReturnType<typeof setTimeout>
+        const refresh = async () => {
+            try {
+                const response = await fetch("/connection", { cache: "no-store", signal: controller.signal })
+                if (!response.ok) throw new Error("连接状态读取失败")
+                setConnection(await response.json() as ConnectionStatus)
+                setConnectionError("")
+            } catch (cause) {
+                if (!controller.signal.aborted) setConnectionError(cause instanceof Error ? cause.message : "连接状态读取失败")
+            } finally {
+                if (!controller.signal.aborted) timer = setTimeout(() => void refresh(), 3000)
+            }
+        }
+        void refresh()
+        return () => { controller.abort(); clearTimeout(timer) }
+    }, [])
+    const submitCredentials = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        setSubmittingCredentials(true)
+        setConnectionError("")
+        try {
+            const response = await fetch("/connection", { method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password }) })
+            const result = await response.json() as ConnectionStatus & { error?: { message?: string } }
+            if (!response.ok) throw new Error(result.error?.message ?? "入口认证信息提交失败")
+            setConnection(result)
+            setPassword("")
+            setEditingCredentials(false)
+        } catch (cause) { setConnectionError(cause instanceof Error ? cause.message : "入口认证信息提交失败") }
+        finally { setSubmittingCredentials(false) }
+    }
     const stateTag = (value?: BrowserState) => <Tag color={value ? labels[value].color : error ? "warning" : "processing"}>
         {value ? labels[value].text : error ? "待确认" : "读取中"}
     </Tag>
@@ -97,6 +150,27 @@ export function App() {
             {browserRow("shared", "通用自动化")}
             {error && <Alert type="warning" showIcon title={error} description="当前启动状态待确认。" />}
             {actionError && <Alert type="error" showIcon title={actionError} />}
+        </section>
+        <section aria-label="业务连接">
+            <div className="section-title"><h2>业务连接</h2></div>
+            <div className="connection-row">
+                <Tag color={connection ? connectionLabels[connection.state].color : "processing"}>
+                    {connection ? connectionLabels[connection.state].text : "读取中"}
+                </Tag>
+                <span>{connection?.account ? `妙手账号 ${connection.account.replace("account-", "")}` : ""}</span>
+                {connection?.credentialsSet && !editingCredentials &&
+                    <Button icon={<Edit2 size={15} />} title="更改入口认证" aria-label="更改入口认证"
+                        onClick={() => setEditingCredentials(true)} />}
+            </div>
+            {(!connection?.credentialsSet || editingCredentials) &&
+                <form className="credentials-form" onSubmit={event => void submitCredentials(event)}>
+                    <label>Basic 用户名<Input value={username} onChange={event => setUsername(event.target.value)}
+                        autoComplete="username" maxLength={128} required /></label>
+                    <label>Basic 密码<Input.Password value={password} onChange={event => setPassword(event.target.value)}
+                        autoComplete="current-password" maxLength={512} required /></label>
+                    <Button type="primary" htmlType="submit" loading={submittingCredentials}>连接</Button>
+                </form>}
+            {connectionError && <Alert type="error" showIcon title={connectionError} />}
         </section>
     </main>
 }

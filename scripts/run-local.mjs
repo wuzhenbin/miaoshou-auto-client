@@ -52,11 +52,6 @@ async function main() {
     npm(['run', 'build'], backendDir)
     npm(['run', 'build'], frontendDir)
 
-    const config = join(runtimeDir, 'client.env')
-    if (!existsSync(config)) {
-        writeFileSync(config, '# 账号业务 API 地址；本机开发默认 http://127.0.0.1:3000/\n# BUSINESS_BACKEND_URL=https://<入口>/<账号标识>/api/\n# BUSINESS_BACKEND_BASIC_USERNAME=\n# BUSINESS_BACKEND_BASIC_PASSWORD=\n', { mode: 0o600 })
-        console.log(`配置文件已创建：${config}。连接远端账号前请填写 BUSINESS_BACKEND_URL 和所需凭证。`)
-    }
     const port = Number(process.env.CLIENT_PORT || 3001)
     if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('CLIENT_PORT 必须是有效端口')
     const url = `http://127.0.0.1:${port}/`
@@ -64,7 +59,7 @@ async function main() {
     const server = spawn(process.execPath, ['dist/server.js'], {
         cwd: backendDir,
         stdio: 'inherit',
-        env: { ...process.env, HOST: '127.0.0.1', PORT: String(port), DOTENV_CONFIG_PATH: config,
+        env: { ...process.env, HOST: '127.0.0.1', PORT: String(port),
             CLIENT_FRONTEND_DIST: join(frontendDir, 'dist') },
     })
     let stopping = false

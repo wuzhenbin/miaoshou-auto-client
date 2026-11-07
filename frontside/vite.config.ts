@@ -6,5 +6,6 @@ export default defineConfig({
     server: { proxy: {
         "/automation-browsers": "http://127.0.0.1:3001",
         "/health": "http://127.0.0.1:3001",
+        "/connection": "http://127.0.0.1:3001",
     } },
 })
