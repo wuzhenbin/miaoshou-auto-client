@@ -190,8 +190,9 @@ export function App() {
     }
     return <main className="workspace">
         <header><div className="header-brand">
+            <span className="eyebrow">妙手自动化 / 本机客户端</span>
             <span className="brand-mark" aria-hidden="true"><Cpu size={21} strokeWidth={1.9} /></span>
-            <div><span className="eyebrow">妙手自动化 / 本机客户端</span><h1>自动化工作台</h1></div>
+            <h1>自动化工作台</h1>
         </div>
             <div className="header-actions">
                 <span className={`header-connection ${connection?.state === "online" ? "is-online" : ""}`}>
