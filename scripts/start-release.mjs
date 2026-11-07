@@ -26,7 +26,7 @@ function openConfig() {
 async function main() {
     if (!existsSync(config)) {
         mkdirSync(dirname(config), { recursive: true, mode: 0o700 })
-        writeFileSync(config, '# 填写对应账号的业务 API 地址，然后重新双击 start.cmd\nBUSINESS_BACKEND_URL=\n# ONLINE_CLIENT_TOKEN=\n# BUSINESS_BACKEND_BASIC_USERNAME=\n# BUSINESS_BACKEND_BASIC_PASSWORD=\n', { mode: 0o600 })
+        writeFileSync(config, '# 填写对应账号的业务 API 地址，然后重新双击 start.cmd\nBUSINESS_BACKEND_URL=\n# BUSINESS_BACKEND_BASIC_USERNAME=\n# BUSINESS_BACKEND_BASIC_PASSWORD=\n', { mode: 0o600 })
         console.log(`首次运行：请编辑 ${config}，填写 BUSINESS_BACKEND_URL 后重新启动。`)
         openConfig()
         return

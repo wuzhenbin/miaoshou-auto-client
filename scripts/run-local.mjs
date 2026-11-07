@@ -54,7 +54,7 @@ async function main() {
 
     const config = join(runtimeDir, 'client.env')
     if (!existsSync(config)) {
-        writeFileSync(config, '# 账号业务 API 地址；本机开发默认 http://127.0.0.1:3000/\n# BUSINESS_BACKEND_URL=https://<入口>/<账号标识>/api/\n# ONLINE_CLIENT_TOKEN=\n# BUSINESS_BACKEND_BASIC_USERNAME=\n# BUSINESS_BACKEND_BASIC_PASSWORD=\n', { mode: 0o600 })
+        writeFileSync(config, '# 账号业务 API 地址；本机开发默认 http://127.0.0.1:3000/\n# BUSINESS_BACKEND_URL=https://<入口>/<账号标识>/api/\n# BUSINESS_BACKEND_BASIC_USERNAME=\n# BUSINESS_BACKEND_BASIC_PASSWORD=\n', { mode: 0o600 })
         console.log(`配置文件已创建：${config}。连接远端账号前请填写 BUSINESS_BACKEND_URL 和所需凭证。`)
     }
     const port = Number(process.env.CLIENT_PORT || 3001)

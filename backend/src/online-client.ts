@@ -13,7 +13,6 @@ const ackTimeoutMs = 25_000
 
 export function startOnlineClient() {
     const base = process.env.BUSINESS_BACKEND_URL?.trim() || "http://127.0.0.1:3000/"
-    const token = process.env.ONLINE_CLIENT_TOKEN?.trim()
     const target = new URL("auth/online-client/heartbeat", `${base.replace(/\/+$/, "")}/`)
     const resultTarget = new URL("auth/online-client/result", `${base.replace(/\/+$/, "")}/`)
     const websocketTarget = new URL("auth/online-client/ws", `${base.replace(/\/+$/, "")}/`)
@@ -25,7 +24,6 @@ export function startOnlineClient() {
     if ((basicUser || basicPassword) && (!basicUser || !basicPassword)) throw new Error("公网入口 Basic 认证配置不完整")
     if (!["http:", "https:"].includes(target.protocol)) throw new Error("业务后端地址必须使用 HTTP 或 HTTPS")
     const headers: Record<string, string> = { "Content-Type": "application/json" }
-    if (token) headers["X-Online-Client-Token"] = token
     if (basicUser && basicPassword) headers.Authorization = `Basic ${Buffer.from(`${basicUser}:${basicPassword}`).toString("base64")}`
     let stopped = false
     let busy = false

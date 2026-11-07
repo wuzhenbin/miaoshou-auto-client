@@ -4,7 +4,7 @@
 2. 双击 start.cmd。首次运行会打开配置文件：
    %USERPROFILE%\.miaoshou-auto\client-runtime\client.env
 3. 填写 BUSINESS_BACKEND_URL=https://<入口>/<账号标识>/api/
-   如果业务后端要求令牌或 Basic 认证，再填写相应配置。保存并关闭记事本。
+   如果公网入口要求 Basic 认证，再填写相应配置。保存并关闭记事本。
 4. 再次双击 start.cmd。默认浏览器会打开 http://127.0.0.1:3001/。
 5. 在页面中分别点击“打开”，在对应窗口人工登录妙手和 1688。
 
