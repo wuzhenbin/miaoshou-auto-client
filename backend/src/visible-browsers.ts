@@ -76,7 +76,7 @@ async function openVisible(kind: BrowserKind) {
     try {
         child = spawn(executable, [
             `--user-data-dir=${join(root, "browser-profiles", setting.profile)}`,
-            "--no-first-run", "--no-default-browser-check", "--window-size=1440,900",
+            "--no-first-run", "--no-default-browser-check", "--restore-last-session", "--window-size=1440,900",
             "--disable-background-timer-throttling", "--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding",
             "--remote-debugging-address=127.0.0.1", `--remote-debugging-port=${setting.port}`,
             setting.startUrl,
