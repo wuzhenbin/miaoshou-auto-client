@@ -133,7 +133,11 @@ export function App() {
     const postLogin = async (url: string, body?: object, method = "POST") => {
         const response = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : undefined,
             body: body ? JSON.stringify(body) : undefined })
-        const result = await response.json() as { error?: { message?: string } }
+        const raw = await response.text()
+        if (!raw) throw new Error(response.status === 404
+            ? "登录接口不可用，请重启客户端并确认打开的是本机客户端页面"
+            : `登录接口返回空响应（HTTP ${response.status}）`)
+        const result = JSON.parse(raw) as { error?: { message?: string } }
         if (!response.ok) throw new Error(result.error?.message ?? "登录操作失败")
         return result
     }
