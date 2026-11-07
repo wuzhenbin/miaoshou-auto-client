@@ -15,12 +15,14 @@ export type OnlineConnectionState = "online" | "offline" | "unauthorized" | "una
 export type OnlineClientOptions = { base: string; basicUsername: string; basicPassword: string;
     onStatus: (state: OnlineConnectionState) => void }
 
+export class OnlineCommandQueueConflictError extends Error {}
+
 export function startOnlineClient({ base, basicUsername, basicPassword, onStatus }: OnlineClientOptions) {
     const target = new URL("auth/online-client/heartbeat", `${base.replace(/\/+$/, "")}/`)
     const resultTarget = new URL("auth/online-client/result", `${base.replace(/\/+$/, "")}/`)
     const websocketTarget = new URL("auth/online-client/ws", `${base.replace(/\/+$/, "")}/`)
     if (!onlineCommandStore.bindTarget(target.origin + target.pathname))
-        throw new Error("在线命令队列仍有未确认命令，不能切换业务后端地址")
+        throw new OnlineCommandQueueConflictError("在线命令队列仍有未确认业务命令，不能切换业务后端地址")
     websocketTarget.protocol = target.protocol === "https:" ? "wss:" : "ws:"
     if (!["http:", "https:"].includes(target.protocol)) throw new Error("业务后端地址必须使用 HTTP 或 HTTPS")
     const headers: Record<string, string> = { "Content-Type": "application/json",

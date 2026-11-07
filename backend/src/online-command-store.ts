@@ -17,6 +17,11 @@ db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
         id TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL,
         state TEXT NOT NULL CHECK(state IN ('queued','running','completed','uncertain','acked')),
         result TEXT, received_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS superseded_status_commands (
+        id TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL,
+        result TEXT NOT NULL, previous_target TEXT NOT NULL,
+        received_at TEXT NOT NULL, completed_at TEXT NOT NULL, superseded_at TEXT NOT NULL
     );`)
 db.exec("DELETE FROM commands WHERE state='acked' AND kind IN ('browser_status','browser_size_status')")
 
@@ -44,6 +49,15 @@ const pending = db.prepare("SELECT result FROM commands WHERE state IN ('complet
 const pendingCount = db.prepare("SELECT COUNT(*) AS count FROM commands WHERE state IN ('completed','uncertain')")
 const outstanding = db.prepare("SELECT id FROM commands WHERE state <> 'acked' ORDER BY received_at DESC LIMIT 100")
 const unackedCount = db.prepare("SELECT COUNT(*) AS count FROM commands WHERE state <> 'acked'")
+const blockingCount = db.prepare(`SELECT COUNT(*) AS count FROM commands WHERE state <> 'acked'
+    AND NOT (state='completed' AND kind IN ('browser_status','browser_size_status'))`)
+const archiveStatus = db.prepare(`INSERT INTO superseded_status_commands
+    (id,kind,payload,result,previous_target,received_at,completed_at,superseded_at)
+    SELECT id,kind,payload,result,?,received_at,updated_at,? FROM commands
+    WHERE state='completed' AND kind IN ('browser_status','browser_size_status')`)
+const removeSupersededStatus = db.prepare(`DELETE FROM commands
+    WHERE state='completed' AND kind IN ('browser_status','browser_size_status')`)
+const upsertMeta = db.prepare("INSERT INTO metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
 const ack = db.prepare("UPDATE commands SET state='acked',updated_at=? WHERE id=? AND state IN ('completed','uncertain')")
 const deleteAckedStatus = db.prepare("DELETE FROM commands WHERE id=? AND state='acked' AND kind IN ('browser_status','browser_size_status')")
 let resultOffset = 0
@@ -51,9 +65,23 @@ let resultOffset = 0
 function bind(key: string, value: string): boolean {
     const previous = (getMeta.get(key) as { value: string } | undefined)?.value
     if (previous === value) return true
-    if (previous && (unackedCount.get() as { count: number }).count > 0) return false
-    db.prepare("INSERT INTO metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(key, value)
-    return true
+    db.exec("BEGIN IMMEDIATE")
+    try {
+        if (previous && (unackedCount.get() as { count: number }).count > 0) {
+            if (key !== "backend_target" || (blockingCount.get() as { count: number }).count > 0) {
+                db.exec("ROLLBACK")
+                return false
+            }
+            archiveStatus.run(previous, new Date().toISOString())
+            removeSupersededStatus.run()
+        }
+        upsertMeta.run(key, value)
+        db.exec("COMMIT")
+        return true
+    } catch (error) {
+        db.exec("ROLLBACK")
+        throw error
+    }
 }
 
 export const onlineCommandStore = {

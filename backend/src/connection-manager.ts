@@ -1,5 +1,5 @@
 import { inspectMiaoshouAccount } from "./browser-inspection.js"
-import { startOnlineClient, type OnlineConnectionState } from "./online-client.js"
+import { OnlineCommandQueueConflictError, startOnlineClient, type OnlineConnectionState } from "./online-client.js"
 import { loadConnectionCredentials, saveConnectionCredentials } from "./browser-session.js"
 import { runtimeRoot } from "./visible-browsers.js"
 
@@ -87,8 +87,10 @@ export function createConnectionManager() {
                     },
                 })
                 activeRoute = route
-            } catch {
-                status = { state: "queue_conflict", account: route, credentialsSet: true }
+            } catch (error) {
+                console.warn("在线客户端连接启动失败", error)
+                status = { state: error instanceof OnlineCommandQueueConflictError ? "queue_conflict" : "unavailable",
+                    account: route, credentialsSet: true }
             }
         } finally { checking = false }
     }
