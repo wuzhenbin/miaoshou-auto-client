@@ -29,6 +29,39 @@ async function sessionKey(directory: string, create: boolean) {
     }
 }
 
+async function writeEncryptedJson(directory: string, filename: string, value: unknown) {
+    await mkdir(directory, { recursive: true, mode: 0o700 })
+    const key = await sessionKey(directory, true)
+    if (key.length !== 32) throw new Error("妙手凭证密钥无效")
+    const iv = randomBytes(12)
+    const cipher = createCipheriv("aes-256-gcm", key, iv)
+    const data = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()])
+    const pending = join(directory, `${filename}.${randomBytes(6).toString("hex")}.tmp`)
+    await writeFile(pending, JSON.stringify({ iv: iv.toString("base64"), tag: cipher.getAuthTag().toString("base64"),
+        data: data.toString("base64") }), { mode: 0o600 })
+    await rename(pending, join(directory, filename))
+}
+
+async function readEncryptedJson(directory: string, filename: string): Promise<unknown | null> {
+    try {
+        const key = await sessionKey(directory, false)
+        if (key.length !== 32) throw new Error("妙手凭证密钥无效")
+        const payload = JSON.parse(await readFile(join(directory, filename), "utf8")) as Record<string, string>
+        const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(payload.iv, "base64"))
+        decipher.setAuthTag(Buffer.from(payload.tag, "base64"))
+        return JSON.parse(Buffer.concat([decipher.update(Buffer.from(payload.data, "base64")), decipher.final()]).toString()) as unknown
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return null
+        throw error
+    }
+}
+
+function validMiaoshouCredentials(value: unknown): value is MiaoshouCredentials {
+    const candidate = value as MiaoshouCredentials | null
+    return Boolean(candidate && typeof candidate.account === "string" && candidate.account.trim()
+        && typeof candidate.password === "string" && candidate.password)
+}
+
 export async function saveMiaoshouSession(root: string, context: BrowserContext) {
     const cookies = (await context.cookies(cookieUrl)).filter(isMiaoshouSessionCookie)
     if (!cookies.length) return
@@ -77,34 +110,42 @@ export async function clearMiaoshouSession(root: string) {
 }
 
 export async function saveMiaoshouCredentials(root: string, credentials: MiaoshouCredentials) {
+    const saved = await loadSavedMiaoshouCredentials(root)
+    const index = saved.findIndex(item => item.account.toLowerCase() === credentials.account.toLowerCase())
+    if (index >= 0) saved[index] = credentials
+    else saved.push(credentials)
+    await writeEncryptedJson(join(root, sessionDir), "miaoshou-accounts.json", saved)
+    await writeEncryptedJson(join(root, sessionDir), "miaoshou-credentials.json", credentials)
+}
+
+export async function loadSavedMiaoshouCredentials(root: string): Promise<MiaoshouCredentials[]> {
     const directory = join(root, sessionDir)
-    await mkdir(directory, { recursive: true, mode: 0o700 })
-    const key = await sessionKey(directory, true)
-    if (key.length !== 32) throw new Error("浏览器会话密钥无效")
-    const iv = randomBytes(12)
-    const cipher = createCipheriv("aes-256-gcm", key, iv)
-    const data = Buffer.concat([cipher.update(JSON.stringify(credentials)), cipher.final()])
-    const pending = join(directory, "miaoshou-credentials.json.tmp")
-    await writeFile(pending, JSON.stringify({ iv: iv.toString("base64"), tag: cipher.getAuthTag().toString("base64"),
-        data: data.toString("base64") }), { mode: 0o600 })
-    await rename(pending, join(directory, "miaoshou-credentials.json"))
+    const value = await readEncryptedJson(directory, "miaoshou-accounts.json")
+    if (value === null) {
+        const current = await loadMiaoshouCredentials(root)
+        return current ? [current] : []
+    }
+    if (!Array.isArray(value) || !value.every(validMiaoshouCredentials)) throw new Error("已保存的妙手账号无效")
+    return value
 }
 
 export async function loadMiaoshouCredentials(root: string): Promise<MiaoshouCredentials | null> {
-    const directory = join(root, sessionDir)
-    try {
-        const key = await sessionKey(directory, false)
-        if (key.length !== 32) throw new Error("妙手凭证密钥无效")
-        const payload = JSON.parse(await readFile(join(directory, "miaoshou-credentials.json"), "utf8")) as Record<string, string>
-        const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(payload.iv, "base64"))
-        decipher.setAuthTag(Buffer.from(payload.tag, "base64"))
-        const value = JSON.parse(Buffer.concat([decipher.update(Buffer.from(payload.data, "base64")), decipher.final()]).toString()) as MiaoshouCredentials
-        if (typeof value.account !== "string" || typeof value.password !== "string") throw new Error("妙手凭证无效")
-        return value
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return null
-        throw error
-    }
+    const value = await readEncryptedJson(join(root, sessionDir), "miaoshou-credentials.json")
+    if (value !== null && !validMiaoshouCredentials(value)) throw new Error("妙手凭证无效")
+    return value
+}
+
+export async function rememberCurrentMiaoshouCredentials(root: string) {
+    const current = await loadMiaoshouCredentials(root)
+    if (current) await saveMiaoshouCredentials(root, current)
+}
+
+export async function activateSavedMiaoshouCredentials(root: string, account: string) {
+    const saved = (await loadSavedMiaoshouCredentials(root))
+        .find(item => item.account.toLowerCase() === account.trim().toLowerCase())
+    if (!saved) return false
+    await writeEncryptedJson(join(root, sessionDir), "miaoshou-credentials.json", saved)
+    return true
 }
 
 export async function clearMiaoshouCredentials(root: string) {

@@ -31,6 +31,11 @@ section .ant-alert { margin-top: 16px; }
 .connection-row .ant-tag { min-width: 0; }
 .connection-row span { min-width: 0; color: #526367; font-size: 13px; overflow-wrap: anywhere; }
 .credentials-form { display: flex; align-items: end; gap: 12px; max-width: 760px; padding-top: 18px; }
+.saved-account-row { display: flex; align-items: end; gap: 10px; padding-top: 18px; }
+.saved-account-row label { display: grid; gap: 7px; width: min(100%, 260px); min-width: 0; color: #53646a; font-size: 12px; font-weight: 600; }
+.saved-account-row select { width: 100%; height: 32px; padding: 0 10px; border: 1px solid #d9d9d9; border-radius: 5px; background: #fff; color: #1d2a2d; font: inherit; font-size: 14px; }
+.saved-account-row select:focus { border-color: #187c69; outline: 2px solid #d6ece5; }
+.saved-account-row button { flex: none; }
 .browser-panel .credentials-form { gap: 10px; }
 .credentials-form label, .challenge-form label { display: grid; gap: 7px; min-width: 0; color: #53646a; font-size: 12px; font-weight: 600; }
 .credentials-form label { flex: 1; }
@@ -66,4 +71,6 @@ section .ant-alert { margin-top: 16px; }
   .connection-row { grid-template-columns: 112px minmax(0, 1fr) auto; gap: 8px; }
   .credentials-form { display: grid; }
   .credentials-form button { width: 100%; }
+  .saved-account-row { align-items: stretch; flex-direction: column; }
+  .saved-account-row label, .saved-account-row button { width: 100%; }
 }

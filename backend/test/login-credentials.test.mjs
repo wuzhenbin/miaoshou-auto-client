@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { buildApp } from '../src/app.ts'
-import { loadConnectionCredentials, saveConnectionCredentials } from '../src/browser-session.ts'
+import { activateSavedMiaoshouCredentials, clearMiaoshouCredentials, loadConnectionCredentials,
+    loadMiaoshouCredentials, loadSavedMiaoshouCredentials, saveConnectionCredentials,
+    saveMiaoshouCredentials } from '../src/browser-session.ts'
 
 test('Miaoshou credentials stay encrypted locally and are never returned by the API', async () => {
     const root = await mkdtemp(join(tmpdir(), 'miaoshou-client-credentials-'))
@@ -15,28 +17,50 @@ test('Miaoshou credentials stay encrypted locally and are never returned by the 
         const crossSiteSave = await app.inject({ method: 'PUT', url: '/miaoshou-login/credentials',
             headers: { origin: 'https://example.com' }, payload: { account: 'account-1', password: 'private-password' } })
         assert.equal(crossSiteSave.statusCode, 403)
-        const crossSiteDelete = await app.inject({ method: 'DELETE', url: '/miaoshou-login/credentials',
-            headers: { origin: 'https://example.com' } })
-        assert.equal(crossSiteDelete.statusCode, 403)
+        const crossSiteSelect = await app.inject({ method: 'POST', url: '/miaoshou-login/credentials/select',
+            headers: { origin: 'https://example.com' }, payload: { account: 'account-1' } })
+        assert.equal(crossSiteSelect.statusCode, 403)
         const saved = await app.inject({ method: 'PUT', url: '/miaoshou-login/credentials',
             payload: { account: 'account-1', password: 'private-password' } })
         assert.equal(saved.statusCode, 200)
         assert.equal(saved.body.includes('private-password'), false)
         const status = await app.inject({ method: 'GET', url: '/miaoshou-login/status' })
         assert.equal(status.json().configuredAccount, 'account-1')
+        assert.deepEqual(status.json().savedAccounts, ['account-1'])
         assert.equal(status.body.includes('private-password'), false)
         const encrypted = await readFile(join(root, 'browser-sessions', 'miaoshou-credentials.json'), 'utf8')
         assert.equal(encrypted.includes('private-password'), false)
-        const removed = await app.inject({ method: 'DELETE', url: '/miaoshou-login/credentials' })
-        assert.equal(removed.statusCode, 200)
+        const vault = await readFile(join(root, 'browser-sessions', 'miaoshou-accounts.json'), 'utf8')
+        assert.equal(vault.includes('private-password'), false)
+        assert.equal(vault.includes('account-1'), false)
+        await app.inject({ method: 'PUT', url: '/miaoshou-login/credentials',
+            payload: { account: 'account-2', password: 'another-password' } })
+        const selected = await app.inject({ method: 'POST', url: '/miaoshou-login/credentials/select',
+            payload: { account: 'account-1' } })
+        assert.equal(selected.statusCode, 200)
         const after = await app.inject({ method: 'GET', url: '/miaoshou-login/status' })
-        assert.equal(after.json().configuredAccount, null)
+        assert.equal(after.json().configuredAccount, 'account-1')
+        assert.deepEqual(after.json().savedAccounts, ['account-1', 'account-2'])
     } finally {
         await app.close()
         if (previous === undefined) delete process.env.MIAOSHOU_RUNTIME_DIR
         else process.env.MIAOSHOU_RUNTIME_DIR = previous
         await rm(root, { recursive: true, force: true })
     }
+})
+
+test('saved Miaoshou accounts remain available after the active account is cleared', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miaoshou-client-accounts-'))
+    try {
+        await saveMiaoshouCredentials(root, { account: 'account-1', password: 'first-password' })
+        await saveMiaoshouCredentials(root, { account: 'account-2', password: 'second-password' })
+        await saveMiaoshouCredentials(root, { account: 'account-1', password: 'updated-password' })
+        await clearMiaoshouCredentials(root)
+        assert.equal(await loadMiaoshouCredentials(root), null)
+        assert.deepEqual((await loadSavedMiaoshouCredentials(root)).map(item => item.account), ['account-1', 'account-2'])
+        assert.equal(await activateSavedMiaoshouCredentials(root, 'account-1'), true)
+        assert.deepEqual(await loadMiaoshouCredentials(root), { account: 'account-1', password: 'updated-password' })
+    } finally { await rm(root, { recursive: true, force: true }) }
 })
 
 test('business connection credentials survive restart without plaintext storage', async () => {

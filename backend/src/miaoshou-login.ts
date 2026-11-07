@@ -1,6 +1,8 @@
 import { chromium, type Browser, type Page } from "playwright"
 import { browserMode, pauseMiaoshouSessionPersistence, resumeMiaoshouSessionPersistence, runtimeRoot } from "./visible-browsers.js"
-import { clearMiaoshouCredentials, clearMiaoshouSession, loadMiaoshouCredentials, saveMiaoshouCredentials } from "./browser-session.js"
+import { activateSavedMiaoshouCredentials, clearMiaoshouCredentials, clearMiaoshouSession,
+    loadMiaoshouCredentials, loadSavedMiaoshouCredentials, rememberCurrentMiaoshouCredentials,
+    saveMiaoshouCredentials } from "./browser-session.js"
 import { inspectMiaoshouAccount, inspectMiaoshouSession, type LoginSession } from "./browser-inspection.js"
 import type { FastifyInstance } from "fastify"
 import type { ConnectionManager } from "./connection-manager.js"
@@ -189,7 +191,8 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
                 setState("unknown", "妙手登录状态待确认", null)
         }
         const credentials = await loadMiaoshouCredentials(runtimeRoot())
-        return { ...state, configuredAccount: credentials?.account ?? null }
+        return { ...state, configuredAccount: credentials?.account ?? null,
+            savedAccounts: (await loadSavedMiaoshouCredentials(runtimeRoot())).map(item => item.account) }
     })
     app.put<{ Body: { account?: unknown; password?: unknown } }>("/miaoshou-login/credentials", async (request, reply) => {
         const { account, password } = request.body ?? {}
@@ -199,9 +202,15 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
         await saveMiaoshouCredentials(runtimeRoot(), { account: account.trim(), password })
         return { configuredAccount: account.trim() }
     })
-    app.delete("/miaoshou-login/credentials", async () => {
-        await clearMiaoshouCredentials(runtimeRoot())
-        return { configuredAccount: null }
+    app.post<{ Body: { account?: unknown } }>("/miaoshou-login/credentials/select", async (request, reply) => {
+        const account = request.body?.account
+        if (typeof account !== "string" || !account.trim() || account.length > 128)
+            return reply.code(400).send({ error: { message: "请选择已保存的妙手账号" } })
+        if (busy || browserMode("sizeTemplate") !== "stopped" && (await inspectSession()).state !== "not_logged_in")
+            return reply.code(409).send({ error: { message: "请先退出当前妙手账号，或等待登录状态确认" } })
+        if (!await activateSavedMiaoshouCredentials(runtimeRoot(), account))
+            return reply.code(404).send({ error: { message: "该妙手账号未保存在本机" } })
+        return { configuredAccount: account.trim() }
     })
     app.post("/miaoshou-login/logout", async (_request, reply) => {
         if (busy) return reply.code(409).send({ error: { message: "妙手登录操作正在进行，请稍后退出" } })
@@ -215,6 +224,7 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
             const attached = await attach()
             const context = attached.contexts()[0]
             if (!context) throw new Error("妙手浏览器缺少默认会话")
+            await rememberCurrentMiaoshouCredentials(runtimeRoot())
             await clearMiaoshouSession(runtimeRoot())
             await context.clearCookies()
             const cdp = await context.newCDPSession(context.pages()[0] ?? await context.newPage())
@@ -228,7 +238,8 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
             imageSource = ""
             page = null
             setState("idle", "妙手已退出，请输入账号和密码", null)
-            return { ...state, configuredAccount: null }
+            return { ...state, configuredAccount: null,
+                savedAccounts: (await loadSavedMiaoshouCredentials(runtimeRoot())).map(item => item.account) }
         } catch (error) {
             return reply.code(409).send({ error: { message: (error as Error).message } })
         } finally {
