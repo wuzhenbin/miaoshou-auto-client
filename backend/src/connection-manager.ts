@@ -1,5 +1,7 @@
 import { inspectMiaoshouAccount } from "./browser-inspection.js"
 import { startOnlineClient, type OnlineConnectionState } from "./online-client.js"
+import { loadConnectionCredentials, saveConnectionCredentials } from "./browser-session.js"
+import { runtimeRoot } from "./visible-browsers.js"
 
 const gatewayOrigin = process.env.CLIENT_GATEWAY_ORIGIN?.trim() || "https://103.112.1.161"
 
@@ -92,9 +94,18 @@ export function createConnectionManager() {
     }
     const timer = setInterval(() => void check(), 3000)
     timer.unref()
+    const ready = loadConnectionCredentials(runtimeRoot()).then(saved => {
+        if (!saved || saved.origin !== gatewayOrigin) return
+        credentials = { username: saved.username, password: saved.password }
+        status = { state: "login_required", account: null, credentialsSet: true }
+        void check()
+    }).catch(() => { console.warn("本机业务连接凭证无法读取，请在页面重新输入") })
     return {
+        ready,
         status: () => status,
-        setCredentials(username: string, password: string) {
+        async setCredentials(username: string, password: string) {
+            await ready
+            await saveConnectionCredentials(runtimeRoot(), { origin: gatewayOrigin, username, password })
             stop()
             credentials = { username, password }
             status = { state: "login_required", account: null, credentialsSet: true }

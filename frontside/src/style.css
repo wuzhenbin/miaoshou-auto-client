@@ -1,36 +1,63 @@
 * { box-sizing: border-box; }
-body { margin: 0; background: #f5f6f7; color: #20262b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-.workspace { width: min(960px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 24px; border-bottom: 1px solid #dce1e4; }
-.eyebrow { color: #59747e; font-size: 13px; }
-h1 { margin: 4px 0 0; font-size: 28px; font-weight: 650; }
-section { padding: 26px 0; }
-.section-title { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-h2 { margin: 0; font-size: 18px; font-weight: 600; }
-.section-title span { color: #68737a; font-size: 12px; }
-.browser-row { display: grid; grid-template-columns: minmax(0, 160px) 84px minmax(0, 1fr) 100px; align-items: center; gap: 16px; min-height: 64px; border-top: 1px solid #e0e4e6; }
-.browser-row:last-of-type { border-bottom: 1px solid #e0e4e6; }
-.browser-row .ant-tag { margin: 0; text-align: center; }
-.session-state { min-width: 0; color: #435158; overflow-wrap: anywhere; }
-.browser-note { grid-column: 1 / -1; color: #a15c24; font-size: 12px; padding-bottom: 10px; }
-section .ant-alert { margin-top: 18px; }
-.connection-row { display: flex; align-items: center; gap: 12px; min-height: 50px; border-top: 1px solid #e0e4e6; border-bottom: 1px solid #e0e4e6; }
-.connection-row .ant-tag { margin: 0; min-width: 112px; text-align: center; }
-.connection-row span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.credentials-form { display: flex; align-items: end; gap: 12px; padding-top: 18px; }
-.credentials-form label { display: grid; gap: 6px; flex: 1; min-width: 0; color: #435158; font-size: 13px; }
+body { margin: 0; background: #fff; color: #1d2a2d; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 40px; width: min(1100px, calc(100% - 48px)); margin: 0 auto; padding: 0 0 64px; }
+header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 96px; border-bottom: 1px solid #dce3e1; }
+.eyebrow { color: #54746e; font-size: 11px; font-weight: 700; }
+h1 { margin: 5px 0 0; font-size: 24px; font-weight: 650; line-height: 1.25; }
+.header-actions { display: flex; align-items: center; gap: 18px; }
+.header-connection { display: inline-flex; align-items: center; gap: 8px; color: #6b777a; font-size: 13px; white-space: nowrap; }
+.header-connection.is-online { color: #116b51; }
+.status-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #c18c46; }
+.is-online .status-dot { background: #228866; }
+section { min-width: 0; padding: 28px 0 32px; border-bottom: 1px solid #e4e9e7; }
+section[aria-label="业务连接"] { order: 1; grid-column: 1 / -1; }
+section[aria-label="浏览器运行状态"] { order: 2; grid-column: 1 / -1; }
+section[aria-label="妙手登录"] { order: 3; grid-column: 1; }
+section[aria-label="1688 登录"] { order: 4; grid-column: 2; }
+.section-title { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+h2 { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.35; }
+.section-title span { color: #798587; font-size: 12px; }
+.browser-row { display: grid; grid-template-columns: 150px 82px minmax(0, 1fr) 96px; align-items: center; gap: 14px; min-height: 68px; margin-top: 8px; padding: 10px 18px; border: 1px solid #dfe6e3; border-radius: 6px; background: #f8faf9; }
+.browser-row strong { font-size: 14px; font-weight: 600; }
+.browser-row .ant-tag, .connection-row .ant-tag { margin: 0; text-align: center; }
+.session-state { min-width: 0; color: #526367; font-size: 13px; overflow-wrap: anywhere; }
+.browser-note { grid-column: 1 / -1; color: #986329; font-size: 12px; }
+section .ant-alert { margin-top: 16px; }
+.connection-row { display: grid; grid-template-columns: 116px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 46px; }
+.connection-row .ant-tag { min-width: 0; }
+.connection-row span { min-width: 0; color: #526367; font-size: 13px; overflow-wrap: anywhere; }
+.credentials-form { display: flex; align-items: end; gap: 12px; max-width: 760px; padding-top: 18px; }
+.credentials-form label, .challenge-form label { display: grid; gap: 7px; min-width: 0; color: #53646a; font-size: 12px; font-weight: 600; }
+.credentials-form label { flex: 1; }
 .credentials-form button { flex: none; }
-.login-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 16px; }
-.login-actions span { color: #435158; min-width: 0; overflow-wrap: anywhere; }
-.login-challenge { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; padding-top: 16px; }
-.captcha-image { display: block; padding: 0; border: 1px solid #c7d1d5; border-radius: 4px; background: #fff; cursor: pointer; min-width: 124px; min-height: 44px; }
-.captcha-image img { display: block; max-width: 240px; height: auto; }
-.captcha-source-note { color: #a15c24; font-size: 12px; }
-.challenge-form { display: flex; align-items: end; gap: 12px; }
-.challenge-form label { display: grid; gap: 6px; color: #435158; font-size: 13px; }
+.login-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 16px; }
+.login-actions span { min-width: 0; margin-right: auto; color: #526367; font-size: 13px; overflow-wrap: anywhere; }
+.login-challenge { display: flex; align-items: start; flex-direction: column; gap: 10px; padding-top: 18px; }
+.captcha-image { display: grid; place-items: center; width: 180px; height: 62px; padding: 4px; border: 1px solid #cbd9d5; border-radius: 4px; background: #fff; cursor: pointer; }
+.captcha-image:hover { border-color: #187c69; }
+.captcha-image img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.captcha-source-note { color: #986329; font-size: 12px; }
+.challenge-form { display: flex; align-items: end; gap: 10px; max-width: 100%; }
 .challenge-form input { width: 150px; }
-.qr-image { display: block; width: 200px; height: 200px; object-fit: contain; margin-top: 16px; border: 1px solid #e0e4e6; background: #fff; }
-@media (max-width: 700px) { .browser-row { grid-template-columns: minmax(0, 1fr) 84px 100px; gap: 8px; } .session-state { grid-column: 1 / -2; padding-bottom: 10px; } .browser-row button { grid-column: 3; grid-row: 1 / 3; } }
-@media (max-width: 500px) { .workspace { padding-top: 24px; } h1 { font-size: 24px; } .browser-row { grid-template-columns: minmax(0, 1fr) 84px; } .session-state { grid-column: 1 / -1; padding-bottom: 0; } .browser-row button { grid-column: 1 / -1; grid-row: auto; justify-self: start; margin-bottom: 10px; } }
-@media (max-width: 600px) { .credentials-form { display: grid; } .credentials-form button { width: 100%; } }
-@media (max-width: 500px) { .challenge-form { width: 100%; } .challenge-form label { flex: 1; } .challenge-form input { width: 100%; } }
+.qr-image { display: block; width: 200px; height: 200px; object-fit: contain; margin-top: 18px; border: 1px solid #dfe6e3; background: #fff; }
+.workspace .ant-btn-primary { background: #187c69; box-shadow: none; }
+.workspace .ant-btn-primary:not(:disabled):hover { background: #126d5d; }
+.workspace .ant-btn { border-radius: 5px; }
+.workspace .ant-input, .workspace .ant-input-affix-wrapper { border-radius: 5px; }
+@media (max-width: 760px) {
+  .workspace { display: block; width: min(640px, calc(100% - 32px)); }
+  header { min-height: 84px; }
+  section { padding: 24px 0 28px; }
+}
+@media (max-width: 520px) {
+  h1 { font-size: 21px; }
+  .header-actions { gap: 10px; }
+  .header-connection { font-size: 12px; }
+  .browser-row { grid-template-columns: minmax(0, 1fr) 86px; gap: 8px 12px; padding: 12px; }
+  .browser-row .ant-tag { grid-column: 1; grid-row: 2; justify-self: start; min-width: 86px; }
+  .browser-row button { grid-column: 2; grid-row: 1 / 3; }
+  .session-state, .browser-note { grid-column: 1 / -1; }
+  .connection-row { grid-template-columns: 112px minmax(0, 1fr) auto; gap: 8px; }
+  .credentials-form { display: grid; }
+  .credentials-form button { width: 100%; }
+}

@@ -4,7 +4,7 @@
 
 拿到完整 `miaoshou-auto-client/` 目录后，macOS 双击 `start.command`，Windows x64 双击 `start.cmd`。脚本优先使用已安装且版本不低于 22.19.0 的 Node.js；否则从 Node.js 官网下载固定的 22.19.0 版本到当前用户的 `.miaoshou-auto/client-runtime/node/`，核对官方 SHA-256 后使用。首次启动还会联网运行两端 `npm ci`、安装与 Playwright 1.64.0 匹配的 Chromium、构建前后端，再以本机 `127.0.0.1:3001` 提供页面并打开默认浏览器；后续启动复用依赖和浏览器，仍会重新构建。启动窗口需保持打开，结束时在窗口按 Ctrl+C；关闭网页不会停止客户端。妙手和 1688 自动化浏览器由用户在页面点击“启动”，以无头模式运行；客户端进程退出时关闭由其启动的浏览器。
 
-页面的“业务连接”区输入公网入口 Basic 用户名和密码；客户端识别妙手登录账号后自动选择对应的业务 API。凭证仅保留在当前客户端进程内，重启需重新输入。启动脚本需要网络连接到 Node.js 官网、npm 仓库和 Playwright 浏览器下载地址，并需要 `miaoshou-auto-client/` 目录可写。这是基于完整源码目录的临时便捷运行方式，**不是免源码、离线可用的正式交付包**；干净系统的 Windows/macOS 验收仍待完成，交付规划见[在线客户端部署方案](../miaoshou-auto/docs/deployment/online-client-deployment.md)。
+页面的“业务连接”区输入公网入口 Basic 用户名和密码；客户端识别妙手登录账号后自动选择对应的业务 API。凭证在本机加密保存，重启后自动恢复；更换网关地址时不会向新网关自动发送旧凭证。启动脚本需要网络连接到 Node.js 官网、npm 仓库和 Playwright 浏览器下载地址，并需要 `miaoshou-auto-client/` 目录可写。这是基于完整源码目录的临时便捷运行方式，**不是免源码、离线可用的正式交付包**；干净系统的 Windows/macOS 验收仍待完成，交付规划见[在线客户端部署方案](../miaoshou-auto/docs/deployment/online-client-deployment.md)。
 
 客户端通过受公网 Basic 保护的服务端发现接口取得账号路由，公有仓库及发布包不包含客户账号清单。账号未接入时页面显示“账号未接入”，凭证错误显示“认证失败”。
 
@@ -16,7 +16,7 @@
 
 `backend/` 是本机 Fastify 服务，`frontside/` 是 React + TypeScript + Vite 页面。客户端显示妙手尺码表与通用自动化浏览器状态，并由用户点击启动无头 Chromium。妙手账号密码在本机加密保存；客户端自动填写，图片验证码在页面显示并由用户输入。验证码有原始 base64 图片地址时直接用该地址显示；否则显示页面截图并标注来源。验证码变化时页面更新，点击图片会点击妙手网页的图片请求刷新。1688 二维码与短信验证在页面完成。尺码 `direct` 路径的官方参数观察和新模板网页填写已接入在线客户端命令；显式 `legacy` 已归档，业务入口返回 410。尺码命令按管理员独立配置并行执行，默认最多 3 条、可设 1–10；各命令使用独立标签和本机保存证据，其他浏览器命令等待尺码批次结束。正式保存与跨端断线恢复尚未完成端到端验收。
 
-客户端默认使用当前业务网关，按妙手登录账号识别对应的账号 API；本机联调可通过 `CLIENT_GATEWAY_ORIGIN` 覆盖网关入口。业务后端须配置 `MIAOSHOU_LOGIN_ACCOUNT`。公网入口 Basic 凭证在本机页面输入，不写配置文件。客户端主动建立 WebSocket，每 10 秒读取本机妙手浏览器登录账号并发送状态；连接失败或确认超时则用 HTTP 报到，约 30 秒后重试 WebSocket。后端严格匹配账号才显示在线，未登录、断线或停止报到后转离线。同一客户端在两种通道间切换不重复计数；同账号多个客户端在线时，新命令交给首个有效报到且仍在线的客户端，已发命令不跨客户端重试。客户端仅依赖报告的妙手账号匹配，不能证明报告来源，公网使用时应结合已有入口访问控制。连接承载尺码及其他浏览器命令，优先 WebSocket，HTTP 领取和回传兜底。命令和结果保存在 `MIAOSHOU_RUNTIME_DIR/online-client/commands.sqlite`（默认 `~/.miaoshou-auto/online-client/commands.sqlite`）；重启后只读命令可重排队，执行中的网页写入记为未知，不自动重做。队列绑定业务后端地址与妙手账号，有未确认命令时拒绝切换。状态命令收到后端确认后清理，业务命令保留记录。后端未决命令仍在内存，后端重启后的未知结果须人工对账。完整边界见[迁移文档](../miaoshou-auto/docs/design/automation-browser-client-migration.md)。
+客户端默认使用当前业务网关，按妙手登录账号识别对应的账号 API；本机联调可通过 `CLIENT_GATEWAY_ORIGIN` 覆盖网关入口。业务后端须配置 `MIAOSHOU_LOGIN_ACCOUNT`。公网入口 Basic 凭证在本机页面输入，加密保存至 `MIAOSHOU_RUNTIME_DIR/browser-sessions/connection-credentials.json`，密钥保存在同目录；这用于避免明文落盘，并非操作系统凭据库级保护。客户端主动建立 WebSocket，每 10 秒读取本机妙手浏览器登录账号并发送状态；连接失败或确认超时则用 HTTP 报到，约 30 秒后重试 WebSocket。后端严格匹配账号才显示在线，未登录、断线或停止报到后转离线。同一客户端在两种通道间切换不重复计数；同账号多个客户端在线时，新命令交给首个有效报到且仍在线的客户端，已发命令不跨客户端重试。客户端仅依赖报告的妙手账号匹配，不能证明报告来源，公网使用时应结合已有入口访问控制。连接承载尺码及其他浏览器命令，优先 WebSocket，HTTP 领取和回传兜底。命令和结果保存在 `MIAOSHOU_RUNTIME_DIR/online-client/commands.sqlite`（默认 `~/.miaoshou-auto/online-client/commands.sqlite`）；重启后只读命令可重排队，执行中的网页写入记为未知，不自动重做。队列绑定业务后端地址与妙手账号，有未确认命令时拒绝切换。状态命令收到后端确认后清理，业务命令保留记录。后端未决命令仍在内存，后端重启后的未知结果须人工对账。完整边界见[迁移文档](../miaoshou-auto/docs/design/automation-browser-client-migration.md)。
 
 本机开发可向业务后端 `POST /online-client/test-observe/<taskId>` 只读观察官方参数，或向 `POST /online-client/test-fill/<taskId>` 验证已保存任务的历史尺码填表计划。试填经在线命令通道下发并由客户端 SQLite 队列按尺码并发额度执行；每项在独立浏览器标签选类目、填参数与尺码行，回读后点击取消并关闭标签，结果经在线通道回传后端。不会点击保存或改写任务。测试接口只允许回环请求，生产环境关闭，不能代替正式尺码任务执行。本地五路验收脚本为 `../miaoshou-auto/backend/poc/size-template-five-preview.mjs`，运行时临时将尺码并发设为 5，结束后恢复原值。
 

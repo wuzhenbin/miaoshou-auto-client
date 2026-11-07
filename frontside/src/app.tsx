@@ -186,7 +186,8 @@ export function App() {
         return <div className="browser-row" key={kind}>
             <strong>{name}</strong>{stateTag(status?.[kind])}
             <span className="session-state" title={sessionLabel}>{sessionLabel}</span>
-            <Button loading={opening === kind} disabled={opening !== null || !mode || mode !== "stopped"}
+            <Button type={mode === "stopped" ? "primary" : "default"} loading={opening === kind}
+                disabled={opening !== null || !mode || mode !== "stopped"}
                 icon={<Play size={15} />} onClick={() => void changeWindow(kind)}>启动</Button>
             {mode === "headless" && <span className="browser-note">无头浏览器运行中</span>}
             {mode === "visible" && <span className="browser-note">可见实例运行中，请先在任务空闲后关闭</span>}
@@ -194,11 +195,37 @@ export function App() {
         </div>
     }
     return <main className="workspace">
-        <header><div><span className="eyebrow">本机客户端</span><h1>自动化浏览器</h1></div>
-            <Button icon={<RefreshCw size={15} />} onClick={() => setRevision(value => value + 1)} title="刷新浏览器状态" aria-label="刷新浏览器状态" />
+        <header><div><span className="eyebrow">妙手自动化 / 本机客户端</span><h1>自动化工作台</h1></div>
+            <div className="header-actions">
+                <span className={`header-connection ${connection?.state === "online" ? "is-online" : ""}`}>
+                    <span className="status-dot" />{connection ? connectionLabels[connection.state].text : "状态读取中"}
+                </span>
+                <Button icon={<RefreshCw size={15} />} onClick={() => setRevision(value => value + 1)} title="刷新浏览器状态" aria-label="刷新浏览器状态" />
+            </div>
         </header>
+        <section aria-label="业务连接">
+            <div className="section-title"><h2>业务连接</h2></div>
+            <div className="connection-row">
+                <Tag color={connection ? connectionLabels[connection.state].color : "processing"}>
+                    {connection ? connectionLabels[connection.state].text : "读取中"}
+                </Tag>
+                <span>{connection?.account ? `妙手账号 ${connection.account.replace("account-", "")}` : ""}</span>
+                {connection?.credentialsSet && !editingCredentials &&
+                    <Button icon={<Edit2 size={15} />} title="更改入口认证" aria-label="更改入口认证"
+                        onClick={() => setEditingCredentials(true)} />}
+            </div>
+            {(!connection?.credentialsSet || editingCredentials) &&
+                <form className="credentials-form" onSubmit={event => void submitCredentials(event)}>
+                    <label>Basic 用户名<Input value={username} onChange={event => setUsername(event.target.value)}
+                        autoComplete="username" maxLength={128} required /></label>
+                    <label>Basic 密码<Input.Password value={password} onChange={event => setPassword(event.target.value)}
+                        autoComplete="current-password" maxLength={512} required /></label>
+                    <Button type="primary" htmlType="submit" loading={submittingCredentials}>连接</Button>
+                </form>}
+            {connectionError && <Alert type="error" showIcon title={connectionError} />}
+        </section>
         <section aria-label="浏览器运行状态">
-            <div className="section-title"><h2>浏览器运行状态</h2><span>{status ? `检查于 ${new Date(status.checkedAt).toLocaleTimeString("zh-CN", { hour12: false })}` : ""}</span></div>
+            <div className="section-title"><h2>浏览器实例</h2><span>{status ? `更新于 ${new Date(status.checkedAt).toLocaleTimeString("zh-CN", { hour12: false })}` : ""}</span></div>
             {browserRow("sizeTemplate", "妙手尺码表")}
             {browserRow("shared", "通用自动化")}
             {error && <Alert type="warning" showIcon title={error} description="当前启动状态待确认。" />}
@@ -284,27 +311,6 @@ export function App() {
                 }}><label>短信验证码<Input value={smsCode} onChange={event => setSmsCode(event.target.value.replace(/\D/g, ""))}
                     inputMode="numeric" maxLength={8} required /></label><Button type="primary" htmlType="submit" loading={loginBusy}>确认</Button></form>
             </div>}
-        </section>
-        <section aria-label="业务连接">
-            <div className="section-title"><h2>业务连接</h2></div>
-            <div className="connection-row">
-                <Tag color={connection ? connectionLabels[connection.state].color : "processing"}>
-                    {connection ? connectionLabels[connection.state].text : "读取中"}
-                </Tag>
-                <span>{connection?.account ? `妙手账号 ${connection.account.replace("account-", "")}` : ""}</span>
-                {connection?.credentialsSet && !editingCredentials &&
-                    <Button icon={<Edit2 size={15} />} title="更改入口认证" aria-label="更改入口认证"
-                        onClick={() => setEditingCredentials(true)} />}
-            </div>
-            {(!connection?.credentialsSet || editingCredentials) &&
-                <form className="credentials-form" onSubmit={event => void submitCredentials(event)}>
-                    <label>Basic 用户名<Input value={username} onChange={event => setUsername(event.target.value)}
-                        autoComplete="username" maxLength={128} required /></label>
-                    <label>Basic 密码<Input.Password value={password} onChange={event => setPassword(event.target.value)}
-                        autoComplete="current-password" maxLength={512} required /></label>
-                    <Button type="primary" htmlType="submit" loading={submittingCredentials}>连接</Button>
-                </form>}
-            {connectionError && <Alert type="error" showIcon title={connectionError} />}
         </section>
     </main>
 }

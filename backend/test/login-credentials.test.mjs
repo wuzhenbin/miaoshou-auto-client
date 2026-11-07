@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { buildApp } from '../src/app.ts'
+import { loadConnectionCredentials, saveConnectionCredentials } from '../src/browser-session.ts'
 
 test('Miaoshou credentials stay encrypted locally and are never returned by the API', async () => {
     const root = await mkdtemp(join(tmpdir(), 'miaoshou-client-credentials-'))
@@ -28,6 +29,19 @@ test('Miaoshou credentials stay encrypted locally and are never returned by the 
         await app.close()
         if (previous === undefined) delete process.env.MIAOSHOU_RUNTIME_DIR
         else process.env.MIAOSHOU_RUNTIME_DIR = previous
+        await rm(root, { recursive: true, force: true })
+    }
+})
+
+test('business connection credentials survive restart without plaintext storage', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miaoshou-client-connection-'))
+    try {
+        const saved = { origin: 'https://gateway.example', username: 'operator', password: 'private-password' }
+        await saveConnectionCredentials(root, saved)
+        const encrypted = await readFile(join(root, 'browser-sessions', 'connection-credentials.json'), 'utf8')
+        assert.equal(encrypted.includes(saved.password), false)
+        assert.deepEqual(await loadConnectionCredentials(root), saved)
+    } finally {
         await rm(root, { recursive: true, force: true })
     }
 })
