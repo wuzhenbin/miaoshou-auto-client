@@ -1,5 +1,9 @@
 # 自动化客户端
 
+## 当前 Windows 客户端更新方式
+
+目标 Windows 客户端当前从本仓库通过 Git 更新代码。改动先在开发机完成本地测试，提交并推送 Git；目标机按既有 Git 更新和重启流程获取新代码。`npm run package:win` 不是当前目标机更新步骤，除非明确要求免源码发布包，否则不运行打包、不传输 ZIP。客户端运行数据位于用户目录，更新仓库代码时保留该目录。
+
 ## 本机一键启动（现阶段）
 
 拿到完整 `miaoshou-auto-client/` 目录后，macOS 双击 `start.command`，Windows x64 双击 `start.cmd`。脚本优先使用已安装且版本不低于 22.19.0 的 Node.js；否则从 Node.js 官网下载固定的 22.19.0 版本到当前用户的 `.miaoshou-auto/client-runtime/node/`，核对官方 SHA-256 后使用。首次启动还会联网运行两端 `npm ci`、安装与 Playwright 1.64.0 匹配的 Chromium、构建前后端，再以本机 `127.0.0.1:3001` 提供页面并打开默认浏览器；后续启动复用依赖和浏览器，仍会重新构建。启动窗口需保持打开，结束时在窗口按 Ctrl+C；关闭网页不会停止客户端。妙手和 1688 自动化浏览器由用户在页面点击“启动”，以无头模式运行；客户端进程退出时关闭由其启动的浏览器。
@@ -8,7 +12,7 @@
 
 客户端通过受公网 Basic 保护的服务端发现接口取得账号路由，公有仓库及发布包不包含客户账号清单。账号未接入时页面显示“账号未接入”，凭证错误显示“认证失败”。
 
-## Windows x64 免源码发布包
+## Windows x64 免源码发布包（备选，非当前更新方式）
 
 在开发机的 `miaoshou-auto-client/` 目录执行 `npm run package:win`，生成 `release/miaoshou-client-win-x64-<时间>.zip` 及同名 `.sha256`。打包命令从当前 TS 源文件单独编译后端、构建前端、安装后端生产依赖、下载并校验 Windows Node 22.19.0，并下载 Playwright 1.64.0 对应的 Windows Chromium。压缩包中没有本项目的 `src/`、TS/TSX、开发脚本或项目 source map；保留运行所需的编译后 JS、静态页面、第三方生产依赖、Node、Chromium 和启动入口。第三方依赖本身可能包含类型或测试文件。此包从 macOS 交叉组装，尚未在 Windows 实机验收。
 
