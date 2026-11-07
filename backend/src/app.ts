@@ -32,7 +32,7 @@ export function buildApp(probe: Probe = probeBrowser, connection?: ConnectionMan
     const app = Fastify()
     const frontendDist = process.env.CLIENT_FRONTEND_DIST?.trim()
     app.addHook("onRequest", async (request, reply) => {
-        if (request.method !== "POST") return
+        if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) return
         const origin = request.headers.origin
         const port = frontendDist ? process.env.PORT || "3001" : "5175"
         const allowedOrigins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`])

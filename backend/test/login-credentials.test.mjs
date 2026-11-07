@@ -12,6 +12,12 @@ test('Miaoshou credentials stay encrypted locally and are never returned by the 
     process.env.MIAOSHOU_RUNTIME_DIR = root
     const app = buildApp(async () => 'stopped')
     try {
+        const crossSiteSave = await app.inject({ method: 'PUT', url: '/miaoshou-login/credentials',
+            headers: { origin: 'https://example.com' }, payload: { account: 'account-1', password: 'private-password' } })
+        assert.equal(crossSiteSave.statusCode, 403)
+        const crossSiteDelete = await app.inject({ method: 'DELETE', url: '/miaoshou-login/credentials',
+            headers: { origin: 'https://example.com' } })
+        assert.equal(crossSiteDelete.statusCode, 403)
         const saved = await app.inject({ method: 'PUT', url: '/miaoshou-login/credentials',
             payload: { account: 'account-1', password: 'private-password' } })
         assert.equal(saved.statusCode, 200)
