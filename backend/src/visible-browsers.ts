@@ -142,7 +142,7 @@ export function registerVisibleBrowserRoutes(app: FastifyInstance) {
         if (savingSession || opening.has("sizeTemplate")) return
         savingSession = true
         void (async () => {
-            if (browserMode("sizeTemplate") !== "visible") return
+            if (!["visible", "headless"].includes(browserMode("sizeTemplate"))) return
             const inspection = await inspectBrowser("sizeTemplate")
             if (inspection.session.state === "not_logged_in") {
                 await clearMiaoshouSession(runtimeRoot())
