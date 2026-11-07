@@ -108,9 +108,7 @@ export async function closeMiaoshouWebsiteDialogs(target: Page) {
 }
 
 export async function dismissMiaoshouLoginNotices(target: Page) {
-    await target.waitForLoadState("load", { timeout: 15000 })
-    await target.getByRole("button", { name: "创建尺码表模板", exact: true })
-        .waitFor({ state: "visible", timeout: 15000 })
+    await target.waitForLoadState("domcontentloaded", { timeout: 15000 })
     await target.locator(".jx-dialog:visible").first()
         .waitFor({ state: "visible", timeout: 1000 }).catch(() => {})
     await closeMiaoshouWebsiteDialogs(target)
@@ -120,6 +118,11 @@ async function finishLogin(account: string) {
     if (!page) throw new Error("妙手登录页已关闭")
     if (page.url().split("?")[0] !== managementUrl)
         await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
+    const session = await inspectMiaoshouSession()
+    if (session.state === "not_logged_in")
+        return setState("failed", "妙手登录状态未保持，请重新登录", account)
+    if (session.state === "unknown")
+        return setState("unknown", "妙手登录状态待确认，请检查网页", account)
     try { await dismissMiaoshouLoginNotices(page) }
     catch (error) {
         return setState("failed", `妙手已登录，但通知弹窗关闭失败：${(error as Error).message}`, account)
