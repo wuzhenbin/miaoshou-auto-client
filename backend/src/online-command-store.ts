@@ -22,7 +22,16 @@ db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
         id TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL,
         result TEXT NOT NULL, previous_target TEXT NOT NULL,
         received_at TEXT NOT NULL, completed_at TEXT NOT NULL, superseded_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS orphaned_read_results (
+        id TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL, result TEXT NOT NULL,
+        backend_target TEXT, miaoshou_account TEXT,
+        received_at TEXT NOT NULL, completed_at TEXT NOT NULL, archived_at TEXT NOT NULL
     );`)
+const archiveColumns = new Set((db.prepare("PRAGMA table_info(superseded_status_commands)").all() as { name: string }[])
+    .map(column => column.name))
+if (!archiveColumns.has("previous_account")) db.exec("ALTER TABLE superseded_status_commands ADD COLUMN previous_account TEXT")
+if (!archiveColumns.has("reason")) db.exec("ALTER TABLE superseded_status_commands ADD COLUMN reason TEXT NOT NULL DEFAULT 'target_switch'")
 db.exec("DELETE FROM commands WHERE state='acked' AND kind IN ('browser_status','browser_size_status')")
 
 const getMeta = db.prepare("SELECT value FROM metadata WHERE key=?")
@@ -42,6 +51,7 @@ for (const row of readWrites.all() as { id: string; kind: string }[]) {
 
 const insert = db.prepare("INSERT OR IGNORE INTO commands(id,kind,payload,state,received_at,updated_at) VALUES(?,?,?,'queued',?,?)")
 const select = db.prepare("SELECT payload,state,result FROM commands WHERE id=?")
+const selectKind = db.prepare("SELECT kind FROM commands WHERE id=?")
 const next = db.prepare("SELECT payload FROM commands WHERE state='queued' ORDER BY received_at,id LIMIT 1")
 const start = db.prepare("UPDATE commands SET state='running',updated_at=? WHERE id=? AND state='queued'")
 const finish = db.prepare("UPDATE commands SET state='completed',result=?,updated_at=? WHERE id=? AND state='running'")
@@ -52,11 +62,20 @@ const unackedCount = db.prepare("SELECT COUNT(*) AS count FROM commands WHERE st
 const blockingCount = db.prepare(`SELECT COUNT(*) AS count FROM commands WHERE state <> 'acked'
     AND NOT (state='completed' AND kind IN ('browser_status','browser_size_status'))`)
 const archiveStatus = db.prepare(`INSERT INTO superseded_status_commands
-    (id,kind,payload,result,previous_target,received_at,completed_at,superseded_at)
-    SELECT id,kind,payload,result,?,received_at,updated_at,? FROM commands
+    (id,kind,payload,result,previous_target,previous_account,reason,received_at,completed_at,superseded_at)
+    SELECT id,kind,payload,result,?,?,?,received_at,updated_at,? FROM commands
     WHERE state='completed' AND kind IN ('browser_status','browser_size_status')`)
 const removeSupersededStatus = db.prepare(`DELETE FROM commands
     WHERE state='completed' AND kind IN ('browser_status','browser_size_status')`)
+const archiveOrphanedRead = db.prepare(`INSERT INTO orphaned_read_results
+    (id,kind,payload,result,backend_target,miaoshou_account,received_at,completed_at,archived_at)
+    SELECT id,kind,payload,result,
+        (SELECT value FROM metadata WHERE key='backend_target'),
+        (SELECT value FROM metadata WHERE key='miaoshou_account'),received_at,updated_at,?
+    FROM commands WHERE id=? AND state='completed' AND kind IN
+        ('browser_status','browser_size_status','browser_1688_read','browser_miaoshou_detail',
+         'size_template_observe','size_template_preview')`)
+const removeOrphanedRead = db.prepare("DELETE FROM commands WHERE id=? AND state='completed'")
 const upsertMeta = db.prepare("INSERT INTO metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
 const ack = db.prepare("UPDATE commands SET state='acked',updated_at=? WHERE id=? AND state IN ('completed','uncertain')")
 const deleteAckedStatus = db.prepare("DELETE FROM commands WHERE id=? AND state='acked' AND kind IN ('browser_status','browser_size_status')")
@@ -68,11 +87,16 @@ function bind(key: string, value: string): boolean {
     db.exec("BEGIN IMMEDIATE")
     try {
         if (previous && (unackedCount.get() as { count: number }).count > 0) {
-            if (key !== "backend_target" || (blockingCount.get() as { count: number }).count > 0) {
+            if ((blockingCount.get() as { count: number }).count > 0) {
                 db.exec("ROLLBACK")
                 return false
             }
-            archiveStatus.run(previous, new Date().toISOString())
+            const target = key === "backend_target" ? previous
+                : (getMeta.get("backend_target") as { value: string } | undefined)?.value
+            const account = key === "miaoshou_account" ? previous
+                : (getMeta.get("miaoshou_account") as { value: string } | undefined)?.value
+            archiveStatus.run(target ?? "", account ?? null,
+                key === "backend_target" ? "target_switch" : "account_switch", new Date().toISOString())
             removeSupersededStatus.run()
         }
         upsertMeta.run(key, value)
@@ -86,7 +110,7 @@ function bind(key: string, value: string): boolean {
 
 export const onlineCommandStore = {
     clientId,
-    hasOutstanding() { return (unackedCount.get() as { count: number }).count > 0 },
+    hasBlockingCommands() { return (blockingCount.get() as { count: number }).count > 0 },
     bindTarget(target: string) { return bind("backend_target", target) },
     bindAccount(account: { mobile?: string; accountName?: string; email?: string }) {
         const identity = [account.mobile, account.accountName, account.email]
@@ -102,6 +126,19 @@ export const onlineCommandStore = {
         insert.run(command.id, command.type, payload, now, now)
         const current = select.get(command.id) as { payload: string } | undefined
         return current?.payload === payload
+    },
+    kind(id: string): string | null { return (selectKind.get(id) as { kind: string } | undefined)?.kind ?? null },
+    archiveOrphanedRead(id: string) {
+        db.exec("BEGIN IMMEDIATE")
+        try {
+            const archived = archiveOrphanedRead.run(new Date().toISOString(), id).changes === 1
+            if (archived) removeOrphanedRead.run(id)
+            db.exec("COMMIT")
+            return archived
+        } catch (error) {
+            db.exec("ROLLBACK")
+            throw error
+        }
     },
     next(): StoredCommand | null {
         const row = next.get() as { payload: string } | undefined

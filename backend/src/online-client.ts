@@ -35,18 +35,35 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
     let testing = false
     let accountReady = false
     let sizeTemplateConcurrency = 0
+    let deliveringResults = false
+    const warnedOrphans = new Set<string>()
     const deliverResults = async () => {
-        const account = await inspectMiaoshouAccount()
-        if (!account || !onlineCommandStore.bindAccount(account)) return
-        for (const result of onlineCommandStore.results()) {
-            if (socket?.readyState === WebSocket.OPEN) { socket.send(JSON.stringify(result)); continue }
-            try {
+        if (stopped || deliveringResults) return
+        deliveringResults = true
+        try {
+            const account = await inspectMiaoshouAccount()
+            if (stopped || !account || !onlineCommandStore.bindAccount(account)) return
+            for (const result of onlineCommandStore.results()) {
+                if (stopped) return
+                const kind = onlineCommandStore.kind(result.id)
+                const delivery = { ...result, commandKind: kind }
+                try {
                 const response = await fetch(resultTarget, { method: "POST", headers,
-                    body: JSON.stringify({ clientId, account, result }), signal: AbortSignal.timeout(8000) })
-                if (response.ok && (await response.json() as { received?: boolean }).received)
-                    onlineCommandStore.ack(result.id)
-            } catch { /* Retry delivery on the next heartbeat; never rerun the browser command. */ }
-        }
+                    body: JSON.stringify({ clientId, account, result: delivery }), signal: AbortSignal.timeout(8000) })
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+                    const receipt = await response.json() as { received?: unknown }
+                    if (receipt.received === true) onlineCommandStore.ack(result.id)
+                    else if (receipt.received === false) {
+                        if (!onlineCommandStore.archiveOrphanedRead(result.id) && !warnedOrphans.has(result.id)) {
+                            warnedOrphans.add(result.id)
+                            console.warn(`在线业务命令 ${result.id} 的服务端请求已失效，结果保留待对账`)
+                        }
+                    }
+                } catch {
+                    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(delivery))
+                }
+            }
+        } finally { deliveringResults = false }
     }
     const pumpCommands = createOnlineCommandPump(onlineCommandStore,
         message => message.type?.startsWith("browser_")

@@ -110,9 +110,14 @@ export function createConnectionManager() {
         ready,
         status: () => status,
         pauseForLogout() {
-            if (onlineCommandStore.hasOutstanding()) return false
             pausedForLogout = true
             stop()
+            if (onlineCommandStore.hasBlockingCommands()) {
+                pausedForLogout = false
+                status = { state: "connecting", account: null, credentialsSet: Boolean(credentials) }
+                void check()
+                return false
+            }
             status = { state: "login_required", account: null, credentialsSet: Boolean(credentials) }
             return true
         },
