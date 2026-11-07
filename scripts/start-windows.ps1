@@ -13,7 +13,7 @@ if ($systemNode) {
 
 if (-not $nodeExe) {
     if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne [System.Runtime.InteropServices.Architecture]::X64) {
-        throw '当前脚本只支持 Windows x64。'
+        throw 'This launcher supports Windows x64 only.'
     }
     $folder = "node-v$version-win-x64"
     $nodeExe = Join-Path $runtimeRoot "$folder\node.exe"
@@ -25,14 +25,14 @@ if (-not $nodeExe) {
             $baseUrl = "https://nodejs.org/dist/v$version"
             $hashList = Join-Path $tempDir 'SHASUMS256.txt'
             $zipPath = Join-Path $tempDir $archive
-            Write-Host "正在下载 Node.js $version..."
+            Write-Host "Downloading Node.js $version..."
             Invoke-WebRequest "$baseUrl/SHASUMS256.txt" -OutFile $hashList
             Invoke-WebRequest "$baseUrl/$archive" -OutFile $zipPath
             $line = Get-Content $hashList | Where-Object { $_ -match "^[a-fA-F0-9]{64}\s+$([regex]::Escape($archive))$" } | Select-Object -First 1
-            if (-not $line) { throw 'Node.js 校验清单缺少目标文件。' }
+            if (-not $line) { throw 'Node.js checksum list does not contain the archive.' }
             $expected = ($line -split '\s+')[0]
             $actual = (Get-FileHash $zipPath -Algorithm SHA256).Hash
-            if ($expected -ine $actual) { throw 'Node.js 下载校验失败。' }
+            if ($expected -ine $actual) { throw 'Node.js archive checksum verification failed.' }
             New-Item -ItemType Directory -Force -Path $runtimeRoot | Out-Null
             Expand-Archive $zipPath -DestinationPath $runtimeRoot -Force
         } finally {
