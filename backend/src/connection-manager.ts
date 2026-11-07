@@ -30,6 +30,7 @@ export function createConnectionManager() {
         try {
             const account = await inspectMiaoshouAccount()
             if (!account) {
+                stop()
                 status = { state: "login_required", account: null, credentialsSet: true }
                 return
             }
@@ -44,10 +45,12 @@ export function createConnectionManager() {
                 })
                 if (generation !== currentGeneration) return
                 if (response.status === 401) {
+                    stop()
                     status = { state: "unauthorized", account: null, credentialsSet: true }
                     return
                 }
                 if (response.status === 404) {
+                    stop()
                     status = { state: "unsupported_account", account: null, credentialsSet: true }
                     return
                 }
@@ -56,11 +59,14 @@ export function createConnectionManager() {
                 if (typeof data.route !== "string" || !/^account-[a-z0-9-]+$/.test(data.route)) throw Error("invalid route")
                 route = data.route
             } catch {
-                if (generation === currentGeneration)
+                if (generation === currentGeneration) {
+                    stop()
                     status = { state: "unavailable", account: null, credentialsSet: true }
+                }
                 return
             }
             if (!route) {
+                stop()
                 status = { state: "unsupported_account", account: null, credentialsSet: true }
                 return
             }
