@@ -86,6 +86,7 @@ function bind(key: string, value: string): boolean {
 
 export const onlineCommandStore = {
     clientId,
+    hasOutstanding() { return (unackedCount.get() as { count: number }).count > 0 },
     bindTarget(target: string) { return bind("backend_target", target) },
     bindAccount(account: { mobile?: string; accountName?: string; email?: string }) {
         const identity = [account.mobile, account.accountName, account.email]

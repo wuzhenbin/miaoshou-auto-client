@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Cpu, Edit2, Play, RefreshCw, Trash2 } from "react-feather"
+import { Cpu, Edit2, LogOut, Play, RefreshCw, Trash2 } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -238,6 +238,15 @@ export function App() {
                 {miaoshouLogin?.configuredAccount && !editingLogin &&
                     <Button icon={<Edit2 size={15} />} title="修改妙手凭证" aria-label="修改妙手凭证"
                         onClick={() => setEditingLogin(true)} />}
+                {miaoshouLogin?.phase === "logged_in" &&
+                    <Button icon={<LogOut size={15} />} loading={loginBusy} disabled={loginBusy}
+                        onClick={() => void loginAction(async () => {
+                            setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)
+                            setLoginAccount("")
+                            setLoginPassword("")
+                            setEditingLogin(false)
+                            setRevision(value => value + 1)
+                        })}>退出登录</Button>}
             </div>
             {(!miaoshouLogin?.configuredAccount || editingLogin) &&
                 <form className="credentials-form" onSubmit={event => {

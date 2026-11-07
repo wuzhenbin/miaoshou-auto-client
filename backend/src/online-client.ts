@@ -53,6 +53,7 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
             ? executeOnlineBrowserCommand(message) : executeOnlineSizeTemplateCommand(message),
         deliverResults, () => !stopped && accountReady, () => sizeTemplateConcurrency)
     const executeCommand = (message: StoredCommand) => {
+        if (stopped) return
         if (onlineCommandStore.receive(message)) {
             pumpCommands()
             void deliverResults()
@@ -65,6 +66,7 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
         socket = connection
         connection.on("open", () => { lastAckAt = Date.now(); void heartbeat() })
         connection.on("message", raw => {
+            if (stopped) return
             try {
                 const message = JSON.parse(raw.toString()) as { online?: unknown; type?: string; sizeTemplateConcurrency?: unknown }
                 if (typeof message.online === "boolean") {

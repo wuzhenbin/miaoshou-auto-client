@@ -40,7 +40,7 @@ export function buildApp(probe: Probe = probeBrowser, connection?: ConnectionMan
             return reply.code(403).send({ error: { message: "跨站请求已拒绝" } })
     })
     registerVisibleBrowserRoutes(app)
-    registerMiaoshouLoginRoutes(app, inspectMiaoshouLogin)
+    registerMiaoshouLoginRoutes(app, inspectMiaoshouLogin, connection)
     registerAlibabaLoginRoutes(app)
     app.get("/health", async () => ({ status: "ok" }))
     if (connection) {

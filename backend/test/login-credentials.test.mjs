@@ -51,3 +51,26 @@ test('business connection credentials survive restart without plaintext storage'
         await rm(root, { recursive: true, force: true })
     }
 })
+
+test('logout does not erase credentials when the Miaoshou browser is unavailable', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miaoshou-client-logout-'))
+    const previous = process.env.MIAOSHOU_RUNTIME_DIR
+    process.env.MIAOSHOU_RUNTIME_DIR = root
+    const app = buildApp(async () => 'stopped')
+    try {
+        await app.inject({ method: 'PUT', url: '/miaoshou-login/credentials',
+            payload: { account: 'account-1', password: 'private-password' } })
+        const crossSite = await app.inject({ method: 'POST', url: '/miaoshou-login/logout',
+            headers: { origin: 'https://example.com' } })
+        assert.equal(crossSite.statusCode, 403)
+        const logout = await app.inject({ method: 'POST', url: '/miaoshou-login/logout' })
+        assert.equal(logout.statusCode, 409)
+        const status = await app.inject({ method: 'GET', url: '/miaoshou-login/status' })
+        assert.equal(status.json().configuredAccount, 'account-1')
+    } finally {
+        await app.close()
+        if (previous === undefined) delete process.env.MIAOSHOU_RUNTIME_DIR
+        else process.env.MIAOSHOU_RUNTIME_DIR = previous
+        await rm(root, { recursive: true, force: true })
+    }
+})

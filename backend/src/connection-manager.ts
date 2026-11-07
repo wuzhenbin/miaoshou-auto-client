@@ -2,6 +2,7 @@ import { inspectMiaoshouAccount } from "./browser-inspection.js"
 import { OnlineCommandQueueConflictError, startOnlineClient, type OnlineConnectionState } from "./online-client.js"
 import { loadConnectionCredentials, saveConnectionCredentials } from "./browser-session.js"
 import { runtimeRoot } from "./visible-browsers.js"
+import { onlineCommandStore } from "./online-command-store.js"
 
 const gatewayOrigin = process.env.CLIENT_GATEWAY_ORIGIN?.trim() || "https://103.112.1.161"
 
@@ -18,6 +19,7 @@ export function createConnectionManager() {
     let activeRoute: string | null = null
     let generation = 0
     let checking = false
+    let pausedForLogout = false
     let status: ConnectionStatus = { state: "credentials_required", account: null, credentialsSet: false }
 
     const stop = () => {
@@ -27,10 +29,11 @@ export function createConnectionManager() {
         activeRoute = null
     }
     const check = async () => {
-        if (checking || !credentials) return
+        if (checking || pausedForLogout || !credentials) return
         checking = true
         try {
             const account = await inspectMiaoshouAccount()
+            if (pausedForLogout) return
             if (!account) {
                 stop()
                 status = { state: "login_required", account: null, credentialsSet: true }
@@ -72,6 +75,7 @@ export function createConnectionManager() {
                 status = { state: "unsupported_account", account: null, credentialsSet: true }
                 return
             }
+            if (pausedForLogout) return
             if (route === activeRoute) return
             stop()
             const connectingGeneration = generation
@@ -105,6 +109,14 @@ export function createConnectionManager() {
     return {
         ready,
         status: () => status,
+        pauseForLogout() {
+            if (onlineCommandStore.hasOutstanding()) return false
+            pausedForLogout = true
+            stop()
+            status = { state: "login_required", account: null, credentialsSet: Boolean(credentials) }
+            return true
+        },
+        resumeAfterLogout() { pausedForLogout = false; void check() },
         async setCredentials(username: string, password: string) {
             await ready
             await saveConnectionCredentials(runtimeRoot(), { origin: gatewayOrigin, username, password })

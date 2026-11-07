@@ -19,6 +19,18 @@ const settings: Record<BrowserKind, { name: string; port: number; profile: strin
 const opening = new Set<BrowserKind>()
 const ownedBrowsers = new Set<number>()
 let savingSession = false
+let sessionPersistencePaused = false
+
+export async function pauseMiaoshouSessionPersistence() {
+    sessionPersistencePaused = true
+    for (let attempt = 0; savingSession && attempt < 100; attempt++) await delay(50)
+    if (savingSession) {
+        sessionPersistencePaused = false
+        throw new Error("妙手会话正在保存，请稍后重试退出")
+    }
+}
+
+export function resumeMiaoshouSessionPersistence() { sessionPersistencePaused = false }
 
 export function runtimeRoot() {
     const root = process.env.MIAOSHOU_RUNTIME_DIR?.trim() || join(homedir(), ".miaoshou-auto")
@@ -139,7 +151,7 @@ function assertLocalCdp(kind: BrowserKind) {
 
 export function registerVisibleBrowserRoutes(app: FastifyInstance) {
     const sessionTimer = setInterval(() => {
-        if (savingSession || opening.has("sizeTemplate")) return
+        if (sessionPersistencePaused || savingSession || opening.has("sizeTemplate")) return
         savingSession = true
         void (async () => {
             if (!["visible", "headless"].includes(browserMode("sizeTemplate"))) return

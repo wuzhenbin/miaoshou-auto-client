@@ -1,8 +1,9 @@
 import { chromium, type Browser, type Page } from "playwright"
-import { browserMode, runtimeRoot } from "./visible-browsers.js"
-import { clearMiaoshouCredentials, loadMiaoshouCredentials, saveMiaoshouCredentials } from "./browser-session.js"
+import { browserMode, pauseMiaoshouSessionPersistence, resumeMiaoshouSessionPersistence, runtimeRoot } from "./visible-browsers.js"
+import { clearMiaoshouCredentials, clearMiaoshouSession, loadMiaoshouCredentials, saveMiaoshouCredentials } from "./browser-session.js"
 import { inspectMiaoshouAccount, inspectMiaoshouSession, type LoginSession } from "./browser-inspection.js"
 import type { FastifyInstance } from "fastify"
+import type { ConnectionManager } from "./connection-manager.js"
 
 type Phase = "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown"
 type LoginStatus = { phase: Phase; account: string | null; message: string; imageVersion: number;
@@ -174,7 +175,7 @@ async function refreshAfterFailure() {
 }
 
 export function registerMiaoshouLoginRoutes(app: FastifyInstance,
-    inspectSession: () => Promise<LoginSession> = inspectMiaoshouSession) {
+    inspectSession: () => Promise<LoginSession> = inspectMiaoshouSession, connection?: ConnectionManager) {
     app.get("/miaoshou-login/status", async (_request, reply) => {
         reply.header("Cache-Control", "no-store")
         if (state.phase === "captcha_required" && !busy) await captureCaptcha().catch(() => {})
@@ -201,6 +202,40 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
     app.delete("/miaoshou-login/credentials", async () => {
         await clearMiaoshouCredentials(runtimeRoot())
         return { configuredAccount: null }
+    })
+    app.post("/miaoshou-login/logout", async (_request, reply) => {
+        if (busy) return reply.code(409).send({ error: { message: "妙手登录操作正在进行，请稍后退出" } })
+        if (connection && !connection.pauseForLogout())
+            return reply.code(409).send({ error: { message: "仍有未确认的浏览器命令，请等待任务收尾后退出" } })
+        busy = true
+        try {
+            if (!["headless", "visible"].includes(browserMode("sizeTemplate")))
+                throw new Error("妙手浏览器未运行，请先启动浏览器再退出登录")
+            await pauseMiaoshouSessionPersistence()
+            const attached = await attach()
+            const context = attached.contexts()[0]
+            if (!context) throw new Error("妙手浏览器缺少默认会话")
+            await clearMiaoshouSession(runtimeRoot())
+            await context.clearCookies()
+            const cdp = await context.newCDPSession(context.pages()[0] ?? await context.newPage())
+            try { await cdp.send("Storage.clearDataForOrigin", { origin: "https://erp.91miaoshou.com", storageTypes: "all" }) }
+            finally { await cdp.detach() }
+            const session = await inspectMiaoshouSession()
+            if (session.state !== "not_logged_in")
+                throw new Error("妙手退出状态无法确认，请刷新状态后重试")
+            await clearMiaoshouCredentials(runtimeRoot())
+            image = null
+            imageSource = ""
+            page = null
+            setState("idle", "妙手已退出，请输入账号和密码", null)
+            return { ...state, configuredAccount: null }
+        } catch (error) {
+            return reply.code(409).send({ error: { message: (error as Error).message } })
+        } finally {
+            resumeMiaoshouSessionPersistence()
+            connection?.resumeAfterLogout()
+            busy = false
+        }
     })
     app.post("/miaoshou-login/start", async (_request, reply) => {
         try { return await start() }
