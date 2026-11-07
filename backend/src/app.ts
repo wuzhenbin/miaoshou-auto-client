@@ -34,8 +34,9 @@ export function buildApp(probe: Probe = probeBrowser, connection?: ConnectionMan
     app.addHook("onRequest", async (request, reply) => {
         if (request.method !== "POST") return
         const origin = request.headers.origin
-        const allowedOrigin = frontendDist ? `http://127.0.0.1:${process.env.PORT || 3001}` : "http://127.0.0.1:5175"
-        if (origin && origin !== allowedOrigin || request.headers["sec-fetch-site"] === "cross-site")
+        const port = frontendDist ? process.env.PORT || "3001" : "5175"
+        const allowedOrigins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`])
+        if (origin && !allowedOrigins.has(origin) || request.headers["sec-fetch-site"] === "cross-site")
             return reply.code(403).send({ error: { message: "跨站请求已拒绝" } })
     })
     registerVisibleBrowserRoutes(app)
