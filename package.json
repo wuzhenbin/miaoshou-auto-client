@@ -1,0 +1,13 @@
+{
+  "name": "miaoshou-automation-client",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.19.0" },
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontside": "npm --prefix frontside run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontside run build",
+    "package:win": "node scripts/package-win.mjs",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontside run typecheck"
+  }
+}

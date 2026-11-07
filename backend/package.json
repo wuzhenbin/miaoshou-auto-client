@@ -1,0 +1,29 @@
+{
+  "name": "miaoshou-automation-client-backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "dev": "node --watch --import tsx src/server.ts",
+    "browser:install": "playwright install chromium",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.10",
+    "dotenv": "^18.0.3",
+    "fastify": "^5.0.0",
+    "playwright": "1.64.0",
+    "ws": "^8.22.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/ws": "^8.18.2",
+    "tsx": "^4.0.0",
+    "typescript": "~6.0.2"
+  }
+}
