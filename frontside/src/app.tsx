@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Cpu, Edit2, LogOut, Play, RefreshCw, Trash2 } from "react-feather"
+import { Cpu, Edit2, LogIn, LogOut, Play, RefreshCw, Trash2 } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -238,15 +238,6 @@ export function App() {
                 {miaoshouLogin?.configuredAccount && !editingLogin &&
                     <Button icon={<Edit2 size={15} />} title="修改妙手凭证" aria-label="修改妙手凭证"
                         onClick={() => setEditingLogin(true)} />}
-                {miaoshouLogin?.phase === "logged_in" &&
-                    <Button icon={<LogOut size={15} />} loading={loginBusy} disabled={loginBusy}
-                        onClick={() => void loginAction(async () => {
-                            setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)
-                            setLoginAccount("")
-                            setLoginPassword("")
-                            setEditingLogin(false)
-                            setRevision(value => value + 1)
-                        })}>退出登录</Button>}
             </div>
             {(!miaoshouLogin?.configuredAccount || editingLogin) &&
                 <form className="credentials-form" onSubmit={event => {
@@ -262,16 +253,26 @@ export function App() {
                     <label>妙手密码<Input.Password value={loginPassword} onChange={event => setLoginPassword(event.target.value)} required maxLength={256} /></label>
                     <Button type="primary" htmlType="submit" loading={loginBusy}>保存</Button>
                 </form>}
-            {miaoshouLogin?.configuredAccount && <div className="login-actions">
-                <span>{miaoshouLogin.configuredAccount}</span>
-                <Button loading={loginBusy} disabled={status?.modes.sizeTemplate !== "headless"} onClick={() => void loginAction(async () => {
-                    setMiaoshouLogin(await postLogin("/miaoshou-login/start") as MiaoshouLogin)
-                })}>登录妙手</Button>
-                <Button icon={<Trash2 size={15} />} title="移除妙手凭证" aria-label="移除妙手凭证"
+            {(miaoshouLogin?.configuredAccount || miaoshouLogin?.phase === "logged_in") && <div className="login-actions">
+                {miaoshouLogin.configuredAccount && <span>{miaoshouLogin.configuredAccount}</span>}
+                <Button icon={miaoshouLogin.phase === "logged_in" ? <LogOut size={15} /> : <LogIn size={15} />}
+                    loading={loginBusy} disabled={loginBusy || miaoshouLogin.phase !== "logged_in" && status?.modes.sizeTemplate !== "headless"}
+                    onClick={() => void loginAction(async () => {
+                        if (miaoshouLogin.phase === "logged_in") {
+                            setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)
+                            setLoginAccount("")
+                            setLoginPassword("")
+                            setEditingLogin(false)
+                            setRevision(value => value + 1)
+                        } else {
+                            setMiaoshouLogin(await postLogin("/miaoshou-login/start") as MiaoshouLogin)
+                        }
+                    })}>{miaoshouLogin.phase === "logged_in" ? "退出登录" : "登录妙手"}</Button>
+                {miaoshouLogin.configuredAccount && <Button icon={<Trash2 size={15} />} title="移除妙手凭证" aria-label="移除妙手凭证"
                     disabled={loginBusy} onClick={() => void loginAction(async () => {
                         await postLogin("/miaoshou-login/credentials", undefined, "DELETE")
                         setMiaoshouLogin(value => value ? { ...value, configuredAccount: null } : value)
-                    })} />
+                    })} />}
             </div>}
             {miaoshouLogin?.phase === "captcha_required" && <div className="login-challenge">
                 <button className="captcha-image" title="刷新验证码" aria-label="刷新验证码" disabled={loginBusy}
