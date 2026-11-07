@@ -5,7 +5,8 @@ import { isAbsolute, join } from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { chromium } from "playwright"
 import type { FastifyInstance } from "fastify"
-import { setWindowVisibility } from "./browser-inspection.js"
+import { inspectBrowser, setWindowVisibility } from "./browser-inspection.js"
+import { clearMiaoshouSession, restoreMiaoshouSession, saveMiaoshouSession } from "./browser-session.js"
 
 export type BrowserKind = "sizeTemplate" | "shared"
 export type BrowserMode = "visible" | "headless" | "unmanaged" | "stopped"
@@ -16,6 +17,7 @@ const settings: Record<BrowserKind, { name: string; port: number; profile: strin
         startUrl: "https://login.1688.com/member/signin.htm" },
 }
 const opening = new Set<BrowserKind>()
+let savingSession = false
 
 function runtimeRoot() {
     const root = process.env.MIAOSHOU_RUNTIME_DIR?.trim() || join(homedir(), ".miaoshou-auto")
@@ -76,10 +78,11 @@ async function openVisible(kind: BrowserKind) {
     try {
         child = spawn(executable, [
             `--user-data-dir=${join(root, "browser-profiles", setting.profile)}`,
-            "--no-first-run", "--no-default-browser-check", "--restore-last-session", "--window-size=1440,900",
+            "--no-first-run", "--no-default-browser-check", ...(kind === "shared" ? ["--restore-last-session"] : []),
+            "--window-size=1440,900",
             "--disable-background-timer-throttling", "--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding",
             "--remote-debugging-address=127.0.0.1", `--remote-debugging-port=${setting.port}`,
-            setting.startUrl,
+            kind === "sizeTemplate" ? "about:blank" : setting.startUrl,
         ], { detached: true, stdio: ["ignore", fd, fd] })
     } finally { closeSync(fd) }
     let launchError: Error | null = null
@@ -92,7 +95,20 @@ async function openVisible(kind: BrowserKind) {
         if (launchError) throw launchError
         if (exited) throw new Error(`浏览器启动后退出，请查看日志：${logPath}`)
         const current = browserMode(kind)
-        if (current === "visible") return
+        if (current === "visible") {
+            if (kind === "sizeTemplate") {
+                const browser = await chromium.connectOverCDP(`http://127.0.0.1:${setting.port}`)
+                try {
+                    const context = browser.contexts()[0]
+                    if (context) {
+                        await restoreMiaoshouSession(root, context).catch(() => false)
+                        const page = context.pages()[0] ?? await context.newPage()
+                        await page.goto(setting.startUrl, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {})
+                    }
+                } finally { await browser.close() }
+            }
+            return
+        }
         if (current !== "stopped") throw new Error(`端口被其他进程占用，请查看日志：${logPath}`)
     }
     throw new Error(`未确认浏览器窗口启动，请查看日志：${logPath}`)
@@ -105,6 +121,26 @@ function assertLocalCdp(kind: BrowserKind) {
 }
 
 export function registerVisibleBrowserRoutes(app: FastifyInstance) {
+    const sessionTimer = setInterval(() => {
+        if (savingSession || opening.has("sizeTemplate")) return
+        savingSession = true
+        void (async () => {
+            if (browserMode("sizeTemplate") !== "visible") return
+            const inspection = await inspectBrowser("sizeTemplate")
+            if (inspection.session.state === "not_logged_in") {
+                await clearMiaoshouSession(runtimeRoot())
+            } else if (inspection.session.state === "logged_in") {
+                const browser = await chromium.connectOverCDP("http://127.0.0.1:9223", { timeout: 3000 })
+                try {
+                    const context = browser.contexts()[0]
+                    if (context) await saveMiaoshouSession(runtimeRoot(), context)
+                } finally { await browser.close() }
+            }
+        })().catch(error => app.log.warn({ error }, "妙手浏览器会话保存失败"))
+            .finally(() => { savingSession = false })
+    }, 2000)
+    sessionTimer.unref()
+    app.addHook("onClose", async () => { clearInterval(sessionTimer) })
     for (const action of ["open-visible", "minimize"] as const) app.post<{ Params: { kind: BrowserKind } }>(`/automation-browsers/:kind/${action}`, async (request, reply) => {
         reply.header("Cache-Control", "no-store")
         const kind = request.params.kind
