@@ -4,17 +4,22 @@ import { clearMiaoshouCredentials, loadMiaoshouCredentials, saveMiaoshouCredenti
 import type { FastifyInstance } from "fastify"
 
 type Phase = "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed"
-type LoginStatus = { phase: Phase; account: string | null; message: string; imageVersion: number }
+type LoginStatus = { phase: Phase; account: string | null; message: string; imageVersion: number;
+    imageDataUrl: string | null; imageSourceType: "original" | "rendered" | null }
 const managementUrl = "https://erp.91miaoshou.com/pddkj_choice/move_collect/template_management/sizeChart"
 const captchaSelector = ".captcha-field__box img:visible"
 let browser: Browser | null = null
 let page: Page | null = null
 let image: Buffer | null = null
+let imageSource = ""
 let busy = false
-let state: LoginStatus = { phase: "idle", account: null, message: "尚未登录", imageVersion: 0 }
+let state: LoginStatus = { phase: "idle", account: null, message: "尚未登录", imageVersion: 0,
+    imageDataUrl: null, imageSourceType: null }
 
 function setState(phase: Phase, message: string, account = state.account) {
-    state = { ...state, phase, message, account }
+    state = { ...state, phase, message, account,
+        ...(phase === "idle" || phase === "logged_in" || phase === "failed"
+            ? { imageDataUrl: null, imageSourceType: null } : {}) }
     return state
 }
 
@@ -40,20 +45,25 @@ async function captureCaptcha(force = false) {
         const img = document.querySelector<HTMLImageElement>(".captcha-field__box img")
         return img?.complete && img.naturalWidth > 0
     }, undefined, { timeout: 15000 })
+    const source = await captcha.getAttribute("src") ?? ""
     const current = await captcha.screenshot({ timeout: 10000 })
-    if (force || !image?.equals(current)) {
+    if (force || source !== imageSource || !image?.equals(current)) {
         image = current
-        state = { ...state, imageVersion: state.imageVersion + 1 }
+        imageSource = source
+        const original = /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z\d+/=]+$/i.test(source)
+        state = { ...state, imageVersion: state.imageVersion + 1,
+            imageDataUrl: original ? source : `data:image/png;base64,${current.toString("base64")}`,
+            imageSourceType: original ? "original" : "rendered" }
     }
     return state
 }
 
-async function waitForCaptchaChange(previous: Buffer | null) {
+async function waitForCaptchaChange(previousVersion: number) {
     if (!page) throw new Error("妙手登录页已关闭")
     const deadline = Date.now() + 10000
     while (Date.now() < deadline) {
         await captureCaptcha()
-        if (image && (!previous || !image.equals(previous))) return state
+        if (state.imageVersion !== previousVersion) return state
         await page.waitForTimeout(300)
     }
     throw new Error("验证码未更新，请重试")
@@ -71,6 +81,8 @@ async function start() {
     const credentials = await loadMiaoshouCredentials(runtimeRoot())
     if (!credentials) throw new Error("请先保存妙手登录账号和密码")
     busy = true
+    image = null
+    imageSource = ""
     setState("loading", "正在打开妙手登录页", credentials.account)
     try {
         const attached = await attach()
@@ -97,9 +109,9 @@ async function refreshCaptcha() {
     if (busy || state.phase !== "captcha_required" || !page) throw new Error("当前没有可刷新的验证码")
     busy = true
     try {
-        const previous = image
+        const previousVersion = state.imageVersion
         await page.locator(captchaSelector).click({ timeout: 10000 })
-        return await waitForCaptchaChange(previous)
+        return await waitForCaptchaChange(previousVersion)
     } finally { busy = false }
 }
 
@@ -111,9 +123,9 @@ async function submitCaptcha(code: string) {
     busy = true
     setState("submitting", "正在验证妙手登录")
     try {
-        const shownImage = image
+        const shownVersion = state.imageVersion
         await captureCaptcha()
-        if (!shownImage || !image || !shownImage.equals(image)) {
+        if (shownVersion !== state.imageVersion) {
             return setState("captcha_required", "验证码已更新，请输入新图片", credentials.account)
         }
         await page.getByPlaceholder("请输入验证码", { exact: true }).fill(code)
@@ -143,11 +155,11 @@ async function submitCaptcha(code: string) {
 
 async function refreshAfterFailure() {
     if (!page) return
-    const previous = image
+    const previousVersion = state.imageVersion
     await captureCaptcha()
-    if (previous && image && previous.equals(image)) {
+    if (previousVersion === state.imageVersion) {
         await page.locator(captchaSelector).click({ timeout: 10000 })
-        await waitForCaptchaChange(previous)
+        await waitForCaptchaChange(previousVersion)
     }
 }
 

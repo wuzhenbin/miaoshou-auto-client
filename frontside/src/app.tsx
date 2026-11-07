@@ -14,7 +14,8 @@ type ConnectionState = "credentials_required" | "login_required" | "unsupported_
     | "online" | "offline" | "unauthorized" | "unavailable" | "queue_conflict"
 type ConnectionStatus = { state: ConnectionState; account: string | null; credentialsSet: boolean }
 type MiaoshouLogin = { phase: "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed";
-    account: string | null; configuredAccount: string | null; message: string; imageVersion: number }
+    account: string | null; configuredAccount: string | null; message: string; imageVersion: number;
+    imageDataUrl: string | null; imageSourceType: "original" | "rendered" | null }
 type AlibabaLogin = { phase: "idle" | "opening" | "waiting_scan" | "scanned" | "verification_required" | "signed_in" | "expired" | "failed";
     message: string; qrAvailable: boolean; smsRetryAfterSeconds: number }
 
@@ -245,8 +246,10 @@ export function App() {
                         setMiaoshouLogin(await postLogin("/miaoshou-login/captcha/refresh") as MiaoshouLogin)
                         setCaptchaCode("")
                     })}>
-                    <img src={`/miaoshou-login/captcha/image?v=${miaoshouLogin.imageVersion}`} alt="妙手验证码" />
+                    {miaoshouLogin.imageDataUrl && <img src={miaoshouLogin.imageDataUrl} alt="妙手验证码" />}
                 </button>
+                {miaoshouLogin.imageSourceType === "rendered" &&
+                    <span className="captcha-source-note">妙手图片未提供 base64 地址，当前显示页面截图</span>}
                 <form className="challenge-form" onSubmit={event => {
                     event.preventDefault()
                     void loginAction(async () => {
