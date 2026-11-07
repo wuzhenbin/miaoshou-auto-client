@@ -1,7 +1,7 @@
 import { chromium, type Browser, type Page } from "playwright"
 import { browserMode, runtimeRoot } from "./visible-browsers.js"
 import { clearMiaoshouCredentials, loadMiaoshouCredentials, saveMiaoshouCredentials } from "./browser-session.js"
-import { inspectMiaoshouSession, type LoginSession } from "./browser-inspection.js"
+import { inspectMiaoshouAccount, inspectMiaoshouSession, type LoginSession } from "./browser-inspection.js"
 import type { FastifyInstance } from "fastify"
 
 type Phase = "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown"
@@ -92,11 +92,20 @@ async function start() {
         page = context.pages().find(candidate => candidate.url().startsWith("https://erp.91miaoshou.com"))
             ?? context.pages()[0] ?? await context.newPage()
         await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
-        if (await confirmedAccount(credentials.account)) return setState("logged_in", "妙手已登录", credentials.account)
-        if (await page.locator('input[type="password"]').count() === 0)
-            return setState("failed", "浏览器已登录其他妙手账号，请先退出该账号", credentials.account)
+        if (await confirmedAccount(credentials.account).catch(() => false))
+            return setState("logged_in", "妙手已登录", credentials.account)
         const loginPage = page.locator('input[type="password"]')
-        await loginPage.waitFor({ state: "visible", timeout: 15000 })
+        try { await loginPage.waitFor({ state: "visible", timeout: 15000 }) }
+        catch {
+            const account = await inspectMiaoshouAccount()
+            if (account) {
+                if ([account.mobile, account.accountName, account.email]
+                    .some(value => matches(credentials.account, value)))
+                    return setState("logged_in", "妙手已登录", credentials.account)
+                return setState("failed", "浏览器已登录其他妙手账号，请先退出该账号", credentials.account)
+            }
+            return setState("failed", "妙手登录页未加载完成，请重试", credentials.account)
+        }
         await page.getByPlaceholder("手机号/子账号/邮箱", { exact: true }).fill(credentials.account)
         await page.getByPlaceholder("密码", { exact: true }).fill(credentials.password)
         await captureCaptcha(true)
