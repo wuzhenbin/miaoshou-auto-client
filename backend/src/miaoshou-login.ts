@@ -1,9 +1,10 @@
 import { chromium, type Browser, type Page } from "playwright"
 import { browserMode, runtimeRoot } from "./visible-browsers.js"
 import { clearMiaoshouCredentials, loadMiaoshouCredentials, saveMiaoshouCredentials } from "./browser-session.js"
+import { inspectMiaoshouSession, type LoginSession } from "./browser-inspection.js"
 import type { FastifyInstance } from "fastify"
 
-type Phase = "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed"
+type Phase = "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown"
 type LoginStatus = { phase: Phase; account: string | null; message: string; imageVersion: number;
     imageDataUrl: string | null; imageSourceType: "original" | "rendered" | null }
 const managementUrl = "https://erp.91miaoshou.com/pddkj_choice/move_collect/template_management/sizeChart"
@@ -18,7 +19,7 @@ let state: LoginStatus = { phase: "idle", account: null, message: "尚未登录"
 
 function setState(phase: Phase, message: string, account = state.account) {
     state = { ...state, phase, message, account,
-        ...(phase === "idle" || phase === "logged_in" || phase === "failed"
+        ...(phase === "idle" || phase === "logged_in" || phase === "failed" || phase === "unknown"
             ? { imageDataUrl: null, imageSourceType: null } : {}) }
     return state
 }
@@ -163,12 +164,20 @@ async function refreshAfterFailure() {
     }
 }
 
-export function registerMiaoshouLoginRoutes(app: FastifyInstance) {
+export function registerMiaoshouLoginRoutes(app: FastifyInstance,
+    inspectSession: () => Promise<LoginSession> = inspectMiaoshouSession) {
     app.get("/miaoshou-login/status", async (_request, reply) => {
         reply.header("Cache-Control", "no-store")
         if (state.phase === "captcha_required" && !busy) await captureCaptcha().catch(() => {})
-        if (state.phase === "logged_in" && state.account && !busy
-            && !await confirmedAccount(state.account).catch(() => false)) setState("idle", "妙手登录已失效")
+        if (!busy) {
+            const session = await inspectSession()
+            if (session.state === "logged_in" && session.account)
+                setState("logged_in", "妙手已登录", session.account)
+            else if ((state.phase === "logged_in" || state.phase === "unknown") && session.state === "not_logged_in")
+                setState("idle", "妙手登录已失效", null)
+            else if (state.phase === "logged_in" && session.state === "unknown")
+                setState("unknown", "妙手登录状态待确认", null)
+        }
         const credentials = await loadMiaoshouCredentials(runtimeRoot())
         return { ...state, configuredAccount: credentials?.account ?? null }
     })

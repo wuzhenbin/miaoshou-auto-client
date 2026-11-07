@@ -2,7 +2,7 @@ import Fastify from "fastify"
 import fastifyStatic from "@fastify/static"
 import { resolve } from "node:path"
 import { browserMode, registerVisibleBrowserRoutes, type BrowserKind, type BrowserMode } from "./visible-browsers.js"
-import { inspectBrowser, type BrowserInspection } from "./browser-inspection.js"
+import { inspectBrowser, type BrowserInspection, type LoginSession } from "./browser-inspection.js"
 import { registerMiaoshouLoginRoutes } from "./miaoshou-login.js"
 import { registerAlibabaLoginRoutes } from "./alibaba-login.js"
 import type { ConnectionManager } from "./connection-manager.js"
@@ -27,7 +27,8 @@ const probeBrowser: Probe = async (url, token) => {
     }
 }
 
-export function buildApp(probe: Probe = probeBrowser, connection?: ConnectionManager) {
+export function buildApp(probe: Probe = probeBrowser, connection?: ConnectionManager,
+    inspectMiaoshouLogin?: () => Promise<LoginSession>) {
     const app = Fastify()
     const frontendDist = process.env.CLIENT_FRONTEND_DIST?.trim()
     app.addHook("onRequest", async (request, reply) => {
@@ -38,7 +39,7 @@ export function buildApp(probe: Probe = probeBrowser, connection?: ConnectionMan
             return reply.code(403).send({ error: { message: "跨站请求已拒绝" } })
     })
     registerVisibleBrowserRoutes(app)
-    registerMiaoshouLoginRoutes(app)
+    registerMiaoshouLoginRoutes(app, inspectMiaoshouLogin)
     registerAlibabaLoginRoutes(app)
     app.get("/health", async () => ({ status: "ok" }))
     if (connection) {

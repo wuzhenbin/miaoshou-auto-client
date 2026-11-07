@@ -13,7 +13,7 @@ type BrowserStatus = { sizeTemplate: BrowserState; shared: BrowserState; modes: 
 type ConnectionState = "credentials_required" | "login_required" | "unsupported_account" | "connecting"
     | "online" | "offline" | "unauthorized" | "unavailable" | "queue_conflict"
 type ConnectionStatus = { state: ConnectionState; account: string | null; credentialsSet: boolean }
-type MiaoshouLogin = { phase: "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed";
+type MiaoshouLogin = { phase: "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown";
     account: string | null; configuredAccount: string | null; message: string; imageVersion: number;
     imageDataUrl: string | null; imageSourceType: "original" | "rendered" | null }
 type AlibabaLogin = { phase: "idle" | "opening" | "waiting_scan" | "scanned" | "verification_required" | "signed_in" | "expired" | "failed";
@@ -159,9 +159,6 @@ export function App() {
         } catch (cause) { setConnectionError(cause instanceof Error ? cause.message : "入口认证信息提交失败") }
         finally { setSubmittingCredentials(false) }
     }
-    const stateTag = (value?: BrowserState) => <Tag color={value ? labels[value].color : error ? "warning" : "processing"}>
-        {value ? labels[value].text : error ? "待确认" : "读取中"}
-    </Tag>
     const changeWindow = async (kind: BrowserKind) => {
         setOpening(kind)
         setActionError("")
@@ -176,20 +173,13 @@ export function App() {
         } catch (cause) { setActionError(cause instanceof Error ? cause.message : "浏览器窗口打开失败") }
         finally { setOpening(null) }
     }
-    const browserRow = (kind: BrowserKind, name: string) => {
+    const browserHeading = (kind: BrowserKind, name: string) => {
         const mode = status?.modes[kind]
-        const inspection = status?.inspections[kind]
-        const session = inspection?.session
-        const sessionLabel = !["visible", "headless"].includes(mode ?? "") || status?.[kind] !== "running" ? "未检查"
-            : session?.state === "logged_in" ? kind === "sizeTemplate" ? `已登录：${session.account}` : "已登录"
-            : session?.state === "not_logged_in" ? "未登录" : "登录待确认"
-        return <div className="browser-row" key={kind}>
-            <strong>{name}</strong>{stateTag(status?.[kind])}
-            <span className="session-state" title={sessionLabel}>{sessionLabel}</span>
-            <Button type={mode === "stopped" ? "primary" : "default"} loading={opening === kind}
-                disabled={opening !== null || !mode || mode !== "stopped"}
-                icon={<Play size={15} />} onClick={() => void changeWindow(kind)}>启动</Button>
-            {mode === "headless" && <span className="browser-note">无头浏览器运行中</span>}
+        return <div className="browser-panel-heading">
+            <div><span className="browser-kicker">{kind === "sizeTemplate" ? "CDP 9223" : "CDP 9224"}</span><h3>{name}</h3></div>
+            {mode === "stopped" && <Button type="primary" loading={opening === kind} disabled={opening !== null}
+                icon={<Play size={15} />} onClick={() => void changeWindow(kind)}>启动</Button>}
+            {mode === "headless" && <span className="browser-running"><span className="status-dot" />运行中</span>}
             {mode === "visible" && <span className="browser-note">可见实例运行中，请先在任务空闲后关闭</span>}
             {mode === "unmanaged" && <span className="browser-note">端口由其他进程占用</span>}
         </div>
@@ -224,18 +214,18 @@ export function App() {
                 </form>}
             {connectionError && <Alert type="error" showIcon title={connectionError} />}
         </section>
-        <section aria-label="浏览器运行状态">
+        <section aria-label="浏览器实例">
             <div className="section-title"><h2>浏览器实例</h2><span>{status ? `更新于 ${new Date(status.checkedAt).toLocaleTimeString("zh-CN", { hour12: false })}` : ""}</span></div>
-            {browserRow("sizeTemplate", "妙手尺码表")}
-            {browserRow("shared", "通用自动化")}
             {error && <Alert type="warning" showIcon title={error} description="当前启动状态待确认。" />}
             {actionError && <Alert type="error" showIcon title={actionError} />}
-        </section>
-        <section aria-label="妙手登录">
-            <div className="section-title"><h2>妙手登录</h2></div>
+            {loginError && <Alert type="error" showIcon title={loginError} />}
+            <div className="browser-panels">
+            <article className="browser-panel" aria-label="妙手尺码表">
+            {browserHeading("sizeTemplate", "妙手尺码表")}
             <div className="connection-row">
                 <Tag color={miaoshouLogin?.phase === "logged_in" ? "success" : miaoshouLogin?.phase === "failed" ? "error" : "warning"}>
-                    {miaoshouLogin?.phase === "logged_in" ? "已登录" : miaoshouLogin?.phase === "captcha_required" ? "等待验证码" : "未登录"}
+                    {miaoshouLogin?.phase === "logged_in" ? "已登录" : miaoshouLogin?.phase === "captcha_required" ? "等待验证码"
+                        : miaoshouLogin?.phase === "unknown" ? "待确认" : "未登录"}
                 </Tag>
                 <span>{miaoshouLogin?.message ?? "读取中"}</span>
                 {miaoshouLogin?.configuredAccount && !editingLogin &&
@@ -286,10 +276,9 @@ export function App() {
                 }}><label>验证码<Input value={captchaCode} onChange={event => setCaptchaCode(event.target.value.replace(/\D/g, ""))}
                     inputMode="numeric" maxLength={4} required /></label><Button type="primary" htmlType="submit" loading={loginBusy}>确认</Button></form>
             </div>}
-            {loginError && <Alert type="error" showIcon title={loginError} />}
-        </section>
-        <section aria-label="1688 登录">
-            <div className="section-title"><h2>1688 登录</h2></div>
+            </article>
+            <article className="browser-panel" aria-label="通用自动化">
+            {browserHeading("shared", "通用自动化")}
             <div className="connection-row"><Tag color={alibabaLogin?.phase === "signed_in" ? "success" : "warning"}>
                 {alibabaLogin?.phase === "signed_in" ? "已登录" : alibabaLogin?.phase === "verification_required" ? "待验证" : "未登录"}
             </Tag><span>{alibabaLogin?.message ?? "读取中"}</span>
@@ -311,6 +300,8 @@ export function App() {
                 }}><label>短信验证码<Input value={smsCode} onChange={event => setSmsCode(event.target.value.replace(/\D/g, ""))}
                     inputMode="numeric" maxLength={8} required /></label><Button type="primary" htmlType="submit" loading={loginBusy}>确认</Button></form>
             </div>}
+            </article>
+            </div>
         </section>
     </main>
 }
