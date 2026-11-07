@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Edit2, Play, RefreshCw, Trash2 } from "react-feather"
+import { Cpu, Edit2, Play, RefreshCw, Trash2 } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -189,7 +189,10 @@ export function App() {
         </div>
     }
     return <main className="workspace">
-        <header><div><span className="eyebrow">妙手自动化 / 本机客户端</span><h1>自动化工作台</h1></div>
+        <header><div className="header-brand">
+            <span className="brand-mark" aria-hidden="true"><Cpu size={21} strokeWidth={1.9} /></span>
+            <div><span className="eyebrow">妙手自动化 / 本机客户端</span><h1>自动化工作台</h1></div>
+        </div>
             <div className="header-actions">
                 <span className={`header-connection ${connection?.state === "online" ? "is-online" : ""}`}>
                     <span className="status-dot" />{connection ? connectionLabels[connection.state].text : "状态读取中"}
