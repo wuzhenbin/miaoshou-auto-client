@@ -51,11 +51,11 @@ for (const row of readWrites.all() as { id: string; kind: string }[]) {
 
 const insert = db.prepare("INSERT OR IGNORE INTO commands(id,kind,payload,state,received_at,updated_at) VALUES(?,?,?,'queued',?,?)")
 const select = db.prepare("SELECT payload,state,result FROM commands WHERE id=?")
-const selectKind = db.prepare("SELECT kind FROM commands WHERE id=?")
+const selectKind = db.prepare("SELECT kind,payload FROM commands WHERE id=?")
 const next = db.prepare("SELECT payload FROM commands WHERE state='queued' ORDER BY received_at,id LIMIT 1")
 const start = db.prepare("UPDATE commands SET state='running',updated_at=? WHERE id=? AND state='queued'")
 const finish = db.prepare("UPDATE commands SET state='completed',result=?,updated_at=? WHERE id=? AND state='running'")
-const pending = db.prepare("SELECT result FROM commands WHERE state IN ('completed','uncertain') ORDER BY updated_at,id LIMIT 100 OFFSET ?")
+const pending = db.prepare("SELECT result FROM commands WHERE state IN ('completed','uncertain') ORDER BY updated_at,id LIMIT ? OFFSET ?")
 const pendingCount = db.prepare("SELECT COUNT(*) AS count FROM commands WHERE state IN ('completed','uncertain')")
 const outstanding = db.prepare("SELECT id FROM commands WHERE state <> 'acked' ORDER BY received_at DESC LIMIT 100")
 const unackedCount = db.prepare("SELECT COUNT(*) AS count FROM commands WHERE state <> 'acked'")
@@ -128,6 +128,12 @@ export const onlineCommandStore = {
         return current?.payload === payload
     },
     kind(id: string): string | null { return (selectKind.get(id) as { kind: string } | undefined)?.kind ?? null },
+    taskId(id: string): string | null {
+        const row = selectKind.get(id) as { payload: string } | undefined
+        if (!row) return null
+        const taskId = (JSON.parse(row.payload) as StoredCommand).taskId
+        return typeof taskId === "string" ? taskId : null
+    },
     archiveOrphanedRead(id: string) {
         db.exec("BEGIN IMMEDIATE")
         try {
@@ -149,11 +155,11 @@ export const onlineCommandStore = {
         if (finish.run(JSON.stringify(result), new Date().toISOString(), result.id).changes !== 1)
             throw new Error("在线命令结果状态冲突")
     },
-    results(): StoredResult[] {
+    results(limit = 100): StoredResult[] {
         const count = (pendingCount.get() as { count: number }).count
         if (!count) { resultOffset = 0; return [] }
         if (resultOffset >= count) resultOffset = 0
-        const rows = pending.all(resultOffset) as { result: string }[]
+        const rows = pending.all(limit, resultOffset) as { result: string }[]
         resultOffset = (resultOffset + rows.length) % count
         return rows.map(row => JSON.parse(row.result) as StoredResult)
     },

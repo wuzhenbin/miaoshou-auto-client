@@ -50,6 +50,7 @@ test('account and target switches archive completed status results but preserve 
                     previous_account: '10987654321', reason: 'target_switch',
                     result: JSON.stringify({ type: 'online_result', id: nextStatusId, ok: true }) })
             assert.deepEqual(store.results(), [])
+
             assert.equal(store.bindTarget(newTarget), true)
 
             const readId = randomUUID()
@@ -60,6 +61,16 @@ test('account and target switches archive completed status results but preserve 
             assert.equal(db.prepare('SELECT kind FROM orphaned_read_results WHERE id=?').get(readId).kind,
                 'size_template_observe')
             assert.deepEqual(store.results(), [])
+
+            const resultIds = Array.from({ length: 45 }, () => randomUUID())
+            for (const id of resultIds) {
+                assert.equal(store.receive({ type: 'size_template_observe', id }), true)
+                assert.equal(store.start(id), true)
+                store.finish({ type: 'online_result', id, ok: true })
+            }
+            const batches = [store.results(20), store.results(20), store.results(20)]
+            assert.deepEqual(batches.map(batch => batch.length), [20, 20, 5])
+            assert.deepEqual(new Set(batches.flat().map(result => result.id)), new Set(resultIds))
         } finally { db.close() }
     } finally {
         if (previous === undefined) delete process.env.MIAOSHOU_RUNTIME_DIR
