@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Cpu, Edit2, LogIn, LogOut, Play, RefreshCw, Trash2 } from "react-feather"
+import { Cpu, Edit2, LogIn, LogOut, Play, RefreshCw } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -268,11 +268,6 @@ export function App() {
                             setMiaoshouLogin(await postLogin("/miaoshou-login/start") as MiaoshouLogin)
                         }
                     })}>{miaoshouLogin.phase === "logged_in" ? "退出登录" : "登录妙手"}</Button>
-                {miaoshouLogin.configuredAccount && <Button icon={<Trash2 size={15} />} title="移除妙手凭证" aria-label="移除妙手凭证"
-                    disabled={loginBusy} onClick={() => void loginAction(async () => {
-                        await postLogin("/miaoshou-login/credentials", undefined, "DELETE")
-                        setMiaoshouLogin(value => value ? { ...value, configuredAccount: null } : value)
-                    })} />}
             </div>}
             {miaoshouLogin?.phase === "captcha_required" && <div className="login-challenge">
                 <button className="captcha-image" title="刷新验证码" aria-label="刷新验证码" disabled={loginBusy}
