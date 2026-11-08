@@ -2,6 +2,7 @@ import { chromium, type Browser, type Page } from "playwright"
 import { ensureAccount } from "./size-template-online-client.js"
 import { createGoodsModelOnce } from "./online-goods-model.js"
 import { browserMode } from "./visible-browsers.js"
+import { readMiaoshouSession } from "./browser-inspection.js"
 
 type Command = { type?: string; id?: string; taskId?: string; expectedAccount?: string;
     url?: string; detailId?: string; shopId?: string; mode?: "shop" | "site"; input?: Record<string, unknown> }
@@ -65,29 +66,17 @@ async function connect(port: number) {
     return { browser, context }
 }
 
-async function readSizeBrowserState() {
+export async function readSizeBrowserState(connectBrowser = () => connect(9223)) {
     let browser: Browser | undefined
     try {
-        const attached = await connect(9223)
+        const attached = await connectBrowser()
         browser = attached.browser
         const pages = attached.context.pages()
         if (!pages.length) return "disconnected"
         if (pages.every(page => page.url() === "about:blank")) return "idle"
-        let waitingLogin = false
-        for (const page of pages) {
-            const url = new URL(page.url())
-            if (url.hostname !== "erp.91miaoshou.com") continue
-            if (/\/login(?:\/|$)/.test(url.pathname) || await page.locator('input[type="password"]').first().isVisible())
-                waitingLogin = true
-        }
-        const target = pages.find(page => {
-            const url = new URL(page.url())
-            return url.hostname === "erp.91miaoshou.com"
-                && url.pathname === "/pddkj_choice/move_collect/template_management/sizeChart"
-        })
-        if (target && await target.getByRole("button", { name: "创建尺码表模板", exact: true }).isVisible())
-            return waitingLogin ? "unknown" : "ready"
-        return waitingLogin ? "waiting_login" : "unknown"
+        const session = await readMiaoshouSession(browser)
+        return session.state === "logged_in" ? "ready"
+            : session.state === "not_logged_in" ? "waiting_login" : "unknown"
     } catch { return "disconnected" }
     finally { await browser?.close().catch(() => {}) }
 }

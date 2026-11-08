@@ -4,13 +4,15 @@ import { activateSavedMiaoshouCredentials, clearMiaoshouCredentials, clearMiaosh
     loadMiaoshouCredentials, loadSavedMiaoshouCredentials, rememberCurrentMiaoshouCredentials,
     saveMiaoshouCredentials } from "./browser-session.js"
 import { inspectMiaoshouAccount, inspectMiaoshouSession, type LoginSession } from "./browser-inspection.js"
+import { dismissMiaoshouLoginNotices } from "./miaoshou-dialogs.js"
+export { closeMiaoshouWebsiteDialogs, dismissMiaoshouLoginNotices } from "./miaoshou-dialogs.js"
 import type { FastifyInstance } from "fastify"
 import type { ConnectionManager } from "./connection-manager.js"
 
 type Phase = "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown"
 type LoginStatus = { phase: Phase; account: string | null; message: string; imageVersion: number;
     imageDataUrl: string | null; imageSourceType: "original" | "rendered" | null }
-const managementUrl = "https://erp.91miaoshou.com/pddkj_choice/move_collect/template_management/sizeChart"
+const loginUrl = "https://erp.91miaoshou.com/"
 const captchaSelector = ".captcha-field__box img:visible"
 let browser: Browser | null = null
 let page: Page | null = null
@@ -79,41 +81,6 @@ async function attach() {
     return browser
 }
 
-// Keep the former size-template dialog rule: close website notices only, never a form confirmation.
-export async function closeMiaoshouWebsiteDialogs(target: Page) {
-    const dialogs = target.locator(".jx-dialog:visible").filter({ hasNot: target.getByRole("heading", {
-        name: "创建尺码表模板", exact: true,
-    }) })
-    for (let closed = 0; await dialogs.count(); closed++) {
-        if (closed >= 10) throw new Error("网站弹窗持续出现，停止关闭")
-        const dialog = dialogs.last()
-        const headerClose = dialog.locator(".jx-dialog__headerbtn:visible")
-        const close = await headerClose.count() === 1 ? headerClose
-            : dialog.getByRole("button", { name: /^(关闭此对话框|关闭|取消)$/, exact: true })
-        if (await close.count() !== 1 || !await close.isEnabled())
-            throw new Error("网站弹窗没有唯一可用的关闭或取消按钮")
-        const element = await dialog.elementHandle()
-        if (!element) continue
-        try {
-            let clickTimeout: Error | undefined
-            try { await close.click({ timeout: 5000, noWaitAfter: true }) }
-            catch (error) {
-                if (!(error instanceof Error) || error.name !== "TimeoutError") throw error
-                clickTimeout = error
-            }
-            try { await element.waitForElementState("hidden", { timeout: 5000 }) }
-            catch (error) { throw clickTimeout ?? error }
-        } finally { await element.dispose() }
-    }
-}
-
-export async function dismissMiaoshouLoginNotices(target: Page) {
-    await target.waitForLoadState("domcontentloaded", { timeout: 15000 })
-    await target.locator(".jx-dialog:visible").first()
-        .waitFor({ state: "visible", timeout: 1000 }).catch(() => {})
-    await closeMiaoshouWebsiteDialogs(target)
-}
-
 async function unconfirmedLogin(account: string) {
     const session = await inspectMiaoshouSession()
     if (session.state === "not_logged_in")
@@ -122,19 +89,13 @@ async function unconfirmedLogin(account: string) {
 }
 
 export async function isVerifiedMiaoshouPage(target: Page, verifyAccount: () => Promise<boolean>) {
-    return target.url().split("?")[0] === managementUrl
-        && !await target.locator('input[type="password"]').isVisible().catch(() => false)
+    return new URL(target.url()).origin === new URL(loginUrl).origin
         && await verifyAccount().catch(() => false)
 }
 
-async function finishLogin(account: string, afterSubmission = false) {
+async function finishLogin(account: string) {
     if (!page) throw new Error("妙手登录页已关闭")
-    if (afterSubmission && page.url().split("?")[0] !== managementUrl)
-        await page.waitForURL(url => `${url.origin}${url.pathname}` === managementUrl,
-            { waitUntil: "domcontentloaded", timeout: 8000 }).catch(() => {})
     if (!await confirmedAccount(account).catch(() => false)) return await unconfirmedLogin(account)
-    if (page.url().split("?")[0] !== managementUrl)
-        await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
     if (!await isVerifiedMiaoshouPage(page, () => confirmedAccount(account)))
         return await unconfirmedLogin(account)
     try { await dismissMiaoshouLoginNotices(page) }
@@ -161,7 +122,7 @@ async function start() {
         if (!context) throw new Error("妙手浏览器缺少默认会话")
         page = context.pages().find(candidate => candidate.url().startsWith("https://erp.91miaoshou.com"))
             ?? context.pages()[0] ?? await context.newPage()
-        await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
+        await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
         if (await confirmedAccount(credentials.account).catch(() => false))
             return await finishLogin(credentials.account)
         const loginPage = page.locator('input[type="password"]')
@@ -224,7 +185,7 @@ async function submitCaptcha(code: string) {
         }
         for (let attempt = 0; attempt < 30; attempt++) {
             if (await confirmedAccount(credentials.account).catch(() => false))
-                return await finishLogin(credentials.account, true)
+                return await finishLogin(credentials.account)
             await page.waitForTimeout(500)
         }
         return setState("failed", "登录结果无法确认，请检查妙手账号", credentials.account)

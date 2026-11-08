@@ -4,17 +4,17 @@ import { chromium } from 'playwright'
 import { closeMiaoshouWebsiteDialogs, dismissMiaoshouLoginNotices,
     isVerifiedMiaoshouPage } from '../src/miaoshou-login.ts'
 
-test('requires the management page and a confirmed account before reporting login success', async () => {
+test('confirms the account without requiring the management page', async () => {
     const browser = await chromium.launch({ headless: true })
     try {
         const page = await browser.newPage()
-        const managementUrl = 'https://erp.91miaoshou.com/pddkj_choice/move_collect/template_management/sizeChart'
-        await page.route(managementUrl, route => route.fulfill({ body: '<main>尺码管理</main>' }))
-        await page.goto(managementUrl)
+        const loginUrl = 'https://erp.91miaoshou.com/'
+        await page.route(loginUrl, route => route.fulfill({ body: '<main>妙手首页</main>' }))
+        await page.goto(loginUrl)
         assert.equal(await isVerifiedMiaoshouPage(page, async () => true), true)
         assert.equal(await isVerifiedMiaoshouPage(page, async () => false), false)
         await page.setContent('<input type="password">')
-        assert.equal(await isVerifiedMiaoshouPage(page, async () => true), false)
+        assert.equal(await isVerifiedMiaoshouPage(page, async () => true), true)
         await page.goto('about:blank')
         assert.equal(await isVerifiedMiaoshouPage(page, async () => true), false)
     } finally { await browser.close() }
@@ -28,10 +28,10 @@ test('dismisses a delayed notice without requiring a management button', async (
             setTimeout(() => {
                 document.querySelector('main').insertAdjacentHTML('beforeend',
                     '<div class="jx-dialog"><h2>通知</h2><button class="jx-dialog__headerbtn">关闭</button></div>')
-            }, 300)
+            }, 1200)
             document.addEventListener('click', event => event.target.closest('.jx-dialog')?.remove())
         </script>`)
-        await dismissMiaoshouLoginNotices(page)
+        await dismissMiaoshouLoginNotices(page, 2000)
         assert.equal(await page.locator('.jx-dialog:visible').count(), 0)
     } finally { await browser.close() }
 })

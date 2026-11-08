@@ -7,12 +7,13 @@ import { chromium } from "playwright"
 import type { FastifyInstance } from "fastify"
 import { inspectBrowser, setWindowVisibility } from "./browser-inspection.js"
 import { clearMiaoshouSession, restoreMiaoshouSession, saveMiaoshouSession } from "./browser-session.js"
+import { dismissMiaoshouLoginNotices } from "./miaoshou-dialogs.js"
 
 export type BrowserKind = "sizeTemplate" | "shared"
 export type BrowserMode = "visible" | "headless" | "unmanaged" | "stopped"
 const settings: Record<BrowserKind, { name: string; port: number; profile: string; log: string; startUrl: string }> = {
     sizeTemplate: { name: "妙手尺码表", port: 9223, profile: "miaoshou-headless", log: "miaoshou-browser.log",
-        startUrl: "https://erp.91miaoshou.com/pddkj_choice/move_collect/template_management/sizeChart" },
+        startUrl: "https://erp.91miaoshou.com/" },
     shared: { name: "通用自动化", port: 9224, profile: "automation-headless", log: "automation-browser.log",
         startUrl: "https://login.1688.com/member/signin.htm" },
 }
@@ -20,6 +21,7 @@ const opening = new Set<BrowserKind>()
 const ownedBrowsers = new Set<number>()
 let savingSession = false
 let sessionPersistencePaused = false
+let noticesHandledForAccount: string | null = null
 
 export async function pauseMiaoshouSessionPersistence() {
     sessionPersistencePaused = true
@@ -77,6 +79,14 @@ async function openBrowser(kind: BrowserKind, headless = false) {
     if (mode === "headless" && headless) return
     if (mode === "visible" && !headless) {
         await setWindowVisibility(kind, "open")
+        if (kind === "sizeTemplate" && (await inspectBrowser(kind)).session.state === "not_logged_in") {
+            const attached = await chromium.connectOverCDP(`http://127.0.0.1:${setting.port}`, { timeout: 3000 })
+            try {
+                const page = attached.contexts()[0]?.pages().find(candidate => candidate.url().startsWith(setting.startUrl))
+                if (page && page.url() !== setting.startUrl)
+                    await page.goto(setting.startUrl, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {})
+            } finally { await attached.close() }
+        }
         return
     }
     if (mode !== "stopped") throw new Error(mode === "headless" ? "无头浏览器仍在运行，请先结束任务并关闭该实例"
@@ -154,18 +164,28 @@ export function registerVisibleBrowserRoutes(app: FastifyInstance) {
         if (sessionPersistencePaused || savingSession || opening.has("sizeTemplate")) return
         savingSession = true
         void (async () => {
-            if (!["visible", "headless"].includes(browserMode("sizeTemplate"))) return
+            const mode = browserMode("sizeTemplate")
+            if (!["visible", "headless"].includes(mode)) {
+                noticesHandledForAccount = null
+                return
+            }
             const inspection = await inspectBrowser("sizeTemplate")
             if (inspection.session.state === "not_logged_in") {
+                noticesHandledForAccount = null
                 await clearMiaoshouSession(runtimeRoot())
             } else if (inspection.session.state === "logged_in") {
                 const browser = await chromium.connectOverCDP("http://127.0.0.1:9223", { timeout: 3000 })
                 try {
                     const context = browser.contexts()[0]
                     if (context) await saveMiaoshouSession(runtimeRoot(), context)
+                    if (mode === "visible" && context && noticesHandledForAccount !== inspection.session.account) {
+                        noticesHandledForAccount = inspection.session.account
+                        const page = context.pages().find(candidate => candidate.url().startsWith(settings.sizeTemplate.startUrl))
+                        if (page) await dismissMiaoshouLoginNotices(page, 8000)
+                    }
                 } finally { await browser.close() }
             }
-        })().catch(error => app.log.warn({ error }, "妙手浏览器会话保存失败"))
+        })().catch(error => app.log.warn({ error }, "妙手浏览器会话维护失败"))
             .finally(() => { savingSession = false })
     }, 2000)
     sessionTimer.unref()

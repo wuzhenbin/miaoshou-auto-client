@@ -59,7 +59,7 @@ async function readMiaoshouAccountState(browser: Browser): Promise<{ state: Logi
     } catch { return { state: "unknown", account: null } }
 }
 
-async function readMiaoshouSession(browser: Browser): Promise<LoginSession> {
+export async function readMiaoshouSession(browser: Browser): Promise<LoginSession> {
     const { state, account: info } = await readMiaoshouAccountState(browser)
     if (info) {
         const account = [info.accountName, info.mobile, info.email]
