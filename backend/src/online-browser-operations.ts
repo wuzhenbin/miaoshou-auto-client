@@ -1,4 +1,5 @@
-import { chromium, type Browser, type Page } from "playwright"
+import { type Browser, type Page } from "playwright"
+import { connectOverCdp } from "./cdp-connection.js"
 import { ensureAccount } from "./size-template-online-client.js"
 import { createGoodsModelOnce } from "./online-goods-model.js"
 import { browserMode } from "./visible-browsers.js"
@@ -60,7 +61,7 @@ async function readMiaoshouDetail(page: Page, detailId: string, shopId: string, 
 }
 
 async function connect(port: number) {
-    const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, { timeout: 3000 })
+    const browser = await connectOverCdp(`http://127.0.0.1:${port}`)
     const context = browser.contexts()[0]
     if (!context) { await browser.close(); throw new Error("浏览器缺少默认会话") }
     return { browser, context }

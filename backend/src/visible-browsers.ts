@@ -4,6 +4,7 @@ import { homedir } from "node:os"
 import { isAbsolute, join } from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { chromium } from "playwright"
+import { connectOverCdp } from "./cdp-connection.js"
 import type { FastifyInstance } from "fastify"
 import { inspectBrowser, invalidateMiaoshouAccountInspection, setWindowVisibility } from "./browser-inspection.js"
 import { clearMiaoshouSession, restoreMiaoshouSession, saveMiaoshouSession } from "./browser-session.js"
@@ -115,7 +116,7 @@ async function openBrowser(kind: BrowserKind, headless = false) {
         const current = browserMode(kind)
         if (current === (headless ? "headless" : "visible")) {
             if (kind === "sizeTemplate") {
-                const browser = await chromium.connectOverCDP(`http://127.0.0.1:${setting.port}`)
+                const browser = await connectOverCdp(`http://127.0.0.1:${setting.port}`)
                 try {
                     const context = browser.contexts()[0]
                     if (context) {
@@ -136,7 +137,7 @@ export async function closeOwnedBrowsers() {
     for (const kind of ["sizeTemplate", "shared"] as const) {
         const pids = listener(settings[kind].port)
         if (!pids.some(pid => ownedBrowsers.has(Number(pid)))) continue
-        const browser = await chromium.connectOverCDP(`http://127.0.0.1:${settings[kind].port}`, { timeout: 3000 }).catch(() => null)
+        const browser = await connectOverCdp(`http://127.0.0.1:${settings[kind].port}`).catch(() => null)
         if (!browser) continue
         try {
             const cdp = await browser.newBrowserCDPSession()
@@ -167,7 +168,7 @@ export function registerVisibleBrowserRoutes(app: FastifyInstance) {
                 noticesHandledForAccount = null
                 await clearMiaoshouSession(runtimeRoot())
             } else if (inspection.session.state === "logged_in") {
-                const browser = await chromium.connectOverCDP("http://127.0.0.1:9223", { timeout: 3000 })
+                const browser = await connectOverCdp("http://127.0.0.1:9223")
                 try {
                     const context = browser.contexts()[0]
                     if (context) await saveMiaoshouSession(runtimeRoot(), context)

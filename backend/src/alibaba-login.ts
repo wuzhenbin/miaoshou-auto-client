@@ -1,4 +1,5 @@
 import { chromium, type Browser, type Frame, type Page } from "playwright"
+import { connectOverCdp } from "./cdp-connection.js"
 import type { FastifyInstance } from "fastify"
 import { browserMode } from "./visible-browsers.js"
 
@@ -43,7 +44,7 @@ async function start() {
     opening = true
     try {
         await page?.close().catch(() => {})
-        if (!browser?.isConnected()) browser = await chromium.connectOverCDP("http://127.0.0.1:9224", { timeout: 3000 })
+        if (!browser?.isConnected()) browser = await connectOverCdp("http://127.0.0.1:9224")
         const context = browser.contexts()[0]
         if (!context) throw new Error("通用浏览器缺少默认会话")
         page = await context.newPage()

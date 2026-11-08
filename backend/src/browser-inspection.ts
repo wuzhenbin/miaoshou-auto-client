@@ -1,4 +1,5 @@
-import { chromium, type Browser } from "playwright"
+import { type Browser } from "playwright"
+import { connectOverCdp } from "./cdp-connection.js"
 import { setTimeout as delay } from "node:timers/promises"
 
 export type WindowState = "open" | "minimized" | "unknown"
@@ -29,7 +30,7 @@ export function invalidateMiaoshouAccountInspection() {
 
 async function withBrowser<T>(kind: BrowserKind, action: (browser: Browser) => Promise<T>): Promise<T> {
     const port = kind === "sizeTemplate" ? 9223 : 9224
-    const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, { timeout: 3000 })
+    const browser = await connectOverCdp(`http://127.0.0.1:${port}`)
     try { return await action(browser) }
     finally { await browser.close().catch(() => {}) }
 }

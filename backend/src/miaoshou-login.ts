@@ -1,4 +1,5 @@
 import { chromium, type Browser, type Page } from "playwright"
+import { connectOverCdp } from "./cdp-connection.js"
 import { browserMode, pauseMiaoshouSessionPersistence, resumeMiaoshouSessionPersistence, runtimeRoot } from "./visible-browsers.js"
 import { activateSavedMiaoshouCredentials, clearMiaoshouCredentials, clearMiaoshouSession,
     loadMiaoshouCredentials, loadSavedMiaoshouCredentials, rememberCurrentMiaoshouCredentials,
@@ -75,7 +76,7 @@ async function waitForCaptchaChange(previousVersion: number) {
 
 async function attach() {
     if (browser?.isConnected()) return browser
-    browser = await chromium.connectOverCDP("http://127.0.0.1:9223", { timeout: 3000 })
+    browser = await connectOverCdp("http://127.0.0.1:9223")
     return browser
 }
 

@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { chromium, type Page, type Request, type Response } from "playwright"
+import { connectOverCdp } from "./cdp-connection.js"
 import { fillForm, managementUrl, readDefinition, selectCategory, selectSizeClass,
     testFillSizeTemplate, type SizeTemplateDefinition, type TestFillCommand } from "./size-template-test-fill.js"
 
@@ -113,7 +114,7 @@ export async function executeOnlineSizeTemplateCommand(input: Command): Promise<
     let page: Page | undefined
     let saveStarted = false
     try {
-        browser = await chromium.connectOverCDP("http://127.0.0.1:9223", { timeout: 3000 })
+        browser = await connectOverCdp("http://127.0.0.1:9223")
         const context = browser.contexts()[0]
         if (!context) throw new Error("妙手浏览器没有默认会话")
         page = await context.newPage()

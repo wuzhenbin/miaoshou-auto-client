@@ -1,4 +1,5 @@
 import { chromium, type Page } from "playwright"
+import { connectOverCdp } from "./cdp-connection.js"
 
 export type TestFillCommand = { type: "test_fill"; id: string; taskId: string; categoryPath: string;
     expectedAccount: string;
@@ -244,7 +245,7 @@ export async function testFillSizeTemplate(command: TestFillCommand): Promise<Te
     let browser: Awaited<ReturnType<typeof chromium.connectOverCDP>> | undefined
     let page: Page | undefined
     try {
-        browser = await chromium.connectOverCDP("http://127.0.0.1:9223", { timeout: 3000 })
+        browser = await connectOverCdp("http://127.0.0.1:9223")
         const context = browser.contexts()[0]
         if (!context) throw new Error("妙手浏览器没有默认会话")
         let info: { result?: string; mobile?: string; accountName?: string; email?: string } | null = null
