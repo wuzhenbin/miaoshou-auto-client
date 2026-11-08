@@ -174,11 +174,12 @@ export function App() {
         setOpening(kind)
         setActionError("")
         try {
-            const response = await fetch(`/automation-browsers/${kind}/start-headless`, { method: "POST" })
+            const action = kind === "sizeTemplate" ? "open-visible" : "start-headless"
+            const response = await fetch(`/automation-browsers/${kind}/${action}`, { method: "POST" })
             const result = await response.json() as { error?: { message?: string } }
             if (!response.ok) throw new Error(result.error?.message ?? "浏览器窗口打开失败")
             setRevision(value => value + 1)
-            if (kind === "sizeTemplate" && miaoshouLogin?.configuredAccount)
+            if (kind === "sizeTemplate" && status?.modes.sizeTemplate === "stopped" && miaoshouLogin?.configuredAccount)
                 applyMiaoshouLoginAction(await postLogin("/miaoshou-login/start") as MiaoshouLoginAction)
             if (kind === "shared") setAlibabaLogin(await postLogin("/alibaba-login/start") as AlibabaLogin)
         } catch (cause) { setActionError(cause instanceof Error ? cause.message : "浏览器窗口打开失败") }
@@ -191,7 +192,10 @@ export function App() {
             {mode === "stopped" && <Button type="primary" loading={opening === kind} disabled={opening !== null}
                 icon={<Play size={15} />} onClick={() => void changeWindow(kind)}>启动</Button>}
             {mode === "headless" && <span className="browser-running"><span className="status-dot" />运行中</span>}
-            {mode === "visible" && <span className="browser-note">可见实例运行中，请先在任务空闲后关闭</span>}
+            {mode === "visible" && (kind === "sizeTemplate"
+                ? <Button icon={<Play size={15} />} loading={opening === kind} disabled={opening !== null}
+                    onClick={() => void changeWindow(kind)}>打开窗口</Button>
+                : <span className="browser-note">可见实例运行中，请先在任务空闲后关闭</span>)}
             {mode === "unmanaged" && <span className="browser-note">端口由其他进程占用</span>}
         </div>
     }
@@ -280,7 +284,8 @@ export function App() {
             {(miaoshouLogin?.configuredAccount || miaoshouLogin?.phase === "logged_in") && <div className="login-actions">
                 {miaoshouLogin.configuredAccount && <span>{miaoshouLogin.configuredAccount}</span>}
                 <Button icon={miaoshouLogin.phase === "logged_in" ? <LogOut size={15} /> : <LogIn size={15} />}
-                    loading={loginBusy} disabled={loginBusy || miaoshouLogin.phase !== "logged_in" && status?.modes.sizeTemplate !== "headless"}
+                    loading={loginBusy} disabled={loginBusy || miaoshouLogin.phase !== "logged_in"
+                        && !["headless", "visible"].includes(status?.modes.sizeTemplate ?? "")}
                     onClick={() => void loginAction(async () => {
                         if (miaoshouLogin.phase === "logged_in") {
                             setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)

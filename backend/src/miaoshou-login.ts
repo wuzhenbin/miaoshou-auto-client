@@ -109,7 +109,7 @@ async function finishLogin(account: string) {
 
 async function start() {
     if (busy) throw new Error("妙手登录正在进行")
-    if (browserMode("sizeTemplate") !== "headless") throw new Error("请先启动妙手无头浏览器")
+    if (!["headless", "visible"].includes(browserMode("sizeTemplate"))) throw new Error("请先启动妙手浏览器")
     const credentials = await loadMiaoshouCredentials(runtimeRoot())
     if (!credentials) throw new Error("请先保存妙手登录账号和密码")
     busy = true
@@ -213,7 +213,7 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
             const session = await inspectSession()
             if (session.state === "logged_in" && session.account)
                 setState("logged_in", "妙手已登录", session.account)
-            else if (state.phase !== "captcha_required") {
+            else if (state.phase !== "captcha_required" && state.phase !== "failed") {
                 if (session.state === "not_logged_in") setState("idle", "妙手未登录", null)
                 else setState("unknown", "妙手登录状态待确认", null)
             }
