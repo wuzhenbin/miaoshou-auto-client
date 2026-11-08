@@ -1,5 +1,5 @@
 import WebSocket from "ws"
-import { inspectMiaoshouAccount } from "./browser-inspection.js"
+import { inspectMiaoshouAccountState, type MiaoshouAccount } from "./browser-inspection.js"
 import { testFillSizeTemplate, type TestFillCommand } from "./size-template-test-fill.js"
 import { executeOnlineSizeTemplateCommand } from "./size-template-online-client.js"
 import { executeOnlineBrowserCommand } from "./online-browser-operations.js"
@@ -34,14 +34,30 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
     let nextWebSocketAttempt = 0
     let testing = false
     let accountReady = false
+    let lastKnownAccount: MiaoshouAccount | null = null
+    let lastKnownAccountAt = 0
     let sizeTemplateConcurrency = 0
     let deliveringResults = false
     const warnedOrphans = new Set<string>()
+    const readHeartbeatAccount = async () => {
+        const inspected = await inspectMiaoshouAccountState()
+        if (inspected.account) {
+            lastKnownAccount = inspected.account
+            lastKnownAccountAt = Date.now()
+            return inspected.account
+        }
+        if (inspected.state === "not_logged_in") {
+            lastKnownAccount = null
+            lastKnownAccountAt = 0
+            return null
+        }
+        return lastKnownAccount && Date.now() - lastKnownAccountAt < 60_000 ? lastKnownAccount : null
+    }
     const deliverResults = async () => {
         if (stopped || deliveringResults) return
         deliveringResults = true
         try {
-            const account = await inspectMiaoshouAccount()
+            const account = await readHeartbeatAccount()
             if (stopped || !account || !onlineCommandStore.bindAccount(account)) return
             const results = onlineCommandStore.results(20)
             let cursor = 0
@@ -123,7 +139,7 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
         busy = true
         try {
             connect()
-            const account = await inspectMiaoshouAccount()
+            const account = await readHeartbeatAccount()
             accountReady = Boolean(account && onlineCommandStore.bindAccount(account))
             if (!accountReady && account)
                 console.warn("在线命令队列仍有未确认命令，当前妙手账号与队列绑定账号不一致")

@@ -116,9 +116,13 @@ export async function inspectMiaoshouSession(): Promise<LoginSession> {
     catch { return unknownSession }
 }
 
+export async function inspectMiaoshouAccountState(): Promise<MiaoshouAccountState> {
+    try { return await withBrowser("sizeTemplate", readMiaoshouAccountState) }
+    catch { return unknownAccountState }
+}
+
 export async function inspectMiaoshouAccount(): Promise<MiaoshouAccount | null> {
-    try { return (await withBrowser("sizeTemplate", readMiaoshouAccountState)).account }
-    catch { return null }
+    return (await inspectMiaoshouAccountState()).account
 }
 
 function read1688Session(browser: Browser): LoginSession {
