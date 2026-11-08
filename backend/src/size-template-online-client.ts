@@ -4,7 +4,9 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import { chromium, type Page, type Request, type Response } from "playwright"
 import { connectOverCdp } from "./cdp-connection.js"
-import { setSizeBrowserWriteActive } from "./size-browser-recovery-state.js"
+import { acquireSizeBrowserWrite } from "./size-browser-recovery-state.js"
+import { onlineCommandStore } from "./online-command-store.js"
+import { closeMiaoshouWebsiteDialogs } from "./miaoshou-dialogs.js"
 import { fillForm, managementUrl, readDefinition, selectCategory, selectSizeClass,
     testFillSizeTemplate, type SizeTemplateDefinition, type TestFillCommand } from "./size-template-test-fill.js"
 
@@ -44,6 +46,7 @@ async function closeUnsaved(page: Page) {
 
 async function observe(page: Page, command: Command) {
     await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 30_000 })
+    await closeMiaoshouWebsiteDialogs(page)
     await page.getByRole("button", { name: "创建尺码表模板", exact: true }).click({ timeout: 15_000 })
     await page.locator(".base-item-edit-dialog:visible").waitFor({ state: "visible" })
     await selectCategory(page, command.categoryPath!)
@@ -51,17 +54,23 @@ async function observe(page: Page, command: Command) {
     return { definition: await readDefinition(page), classOptions: sizeClass.options, classLabel: sizeClass.selected }
 }
 
-async function saveOnce(page: Page, command: Command): Promise<SaveEvidence> {
+async function saveOnce(page: Page, command: Command, notifyProgress?: () => void): Promise<SaveEvidence> {
     mkdirSync(directory, { recursive: true, mode: 0o700 })
     const file = join(directory, `${command.id}.json`)
     if (existsSync(file)) throw new Error("本次保存尝试已有本地记录，禁止再次点击")
     const evidence: SaveEvidence = { clickedAt: new Date().toISOString() }
-    const write = () => writeFileSync(file, JSON.stringify({ taskId: command.taskId, templateName: command.templateName,
-        cid: command.cid, evidence }), { mode: 0o600 })
+    const write = () => {
+        onlineCommandStore.saveSizeEvidence(command.id!, evidence)
+        // The SQLite record is authoritative; this file is only an auxiliary inspection copy.
+        try { writeFileSync(file, JSON.stringify({ taskId: command.taskId, templateName: command.templateName,
+            cid: command.cid, evidence }), { mode: 0o600 }) }
+        catch { /* Durable evidence remains in SQLite. */ }
+    }
     writeFileSync(file, JSON.stringify({ taskId: command.taskId, templateName: command.templateName,
         cid: command.cid, evidence, status: "reserved" }), { mode: 0o600, flag: "wx" })
     const requests = new Set<Request>()
     const responses: Promise<void>[] = []
+    let persistenceError: unknown
     const onRequest = (request: Request) => {
         if (request.method() !== "POST" || new URL(request.url()).pathname !== "/api/platform/pddkj_choice/move/size_template/addErpSizeTemplate") return
         requests.add(request)
@@ -73,7 +82,7 @@ async function saveOnce(page: Page, command: Command): Promise<SaveEvidence> {
             cid: body.cid == null ? null : String(body.cid), identityMatches: requests.size === 1
                 && body.name === command.templateName && String(body.cid) === command.cid,
             payloadSha256: createHash("sha256").update(raw).digest("hex") }
-        write()
+        try { write() } catch (error) { persistenceError = error }
     }
     const onResponse = (response: Response) => {
         if (!requests.has(response.request())) return
@@ -84,22 +93,31 @@ async function saveOnce(page: Page, command: Command): Promise<SaveEvidence> {
                 for (const key of ["result", "code", "message", "reason"] as const)
                     if (typeof body[key] === "string") evidence.response[key] = body[key].slice(0, 1000)
             } catch { /* Preserve HTTP status without arbitrary response content. */ }
-            write()
+            try { write() } catch (error) { persistenceError = error }
         })())
     }
     page.on("request", onRequest)
     page.on("response", onResponse)
     try {
+        // FULL-synchronous SQLite boundary precedes the only action capable of submission.
+        // If it cannot be committed, do not click, even if the file reservation succeeded.
+        onlineCommandStore.markSizeSubmissionBoundary(command.id!)
+        try { notifyProgress?.() } catch { /* Advisory reporting never blocks the single save attempt. */ }
         await page.locator(".base-item-edit-dialog:visible").getByRole("button", { name: "保存", exact: true }).click({ timeout: 15_000 })
         evidence.modalClosed = await page.locator(".base-item-edit-dialog:visible").waitFor({ state: "hidden", timeout: 15_000 })
             .then(() => true).catch(() => false)
         await Promise.race([Promise.all(responses), new Promise(resolve => setTimeout(resolve, 3000))])
     } catch (error) { evidence.error = error instanceof Error ? error.message : String(error) }
-    finally { page.off("request", onRequest); page.off("response", onResponse); write() }
+    finally {
+        page.off("request", onRequest)
+        page.off("response", onResponse)
+        if (onlineCommandStore.sizeSubmissionState(command.id!).saveStarted) write()
+    }
+    if (persistenceError) throw persistenceError
     return evidence
 }
 
-export async function executeOnlineSizeTemplateCommand(input: Command): Promise<Result> {
+export async function executeOnlineSizeTemplateCommand(input: Command, notifyProgress?: () => void): Promise<Result> {
     const id = typeof input.id === "string" ? input.id : ""
     if (!/^[0-9a-f-]{36}$/i.test(id) || !/^[0-9a-f-]{36}$/i.test(input.taskId ?? "")
         || !input.categoryPath || !input.expectedAccount || !["size_template_observe", "size_template_create", "size_template_preview"].includes(input.type ?? ""))
@@ -113,9 +131,8 @@ export async function executeOnlineSizeTemplateCommand(input: Command): Promise<
     }
     let browser: Awaited<ReturnType<typeof chromium.connectOverCDP>> | undefined
     let page: Page | undefined
-    let saveStarted = false
     const writeCommand = input.type === "size_template_create"
-    if (writeCommand) setSizeBrowserWriteActive(true)
+    const releaseWrite = writeCommand ? acquireSizeBrowserWrite() : undefined
     try {
         browser = await connectOverCdp("http://127.0.0.1:9223")
         const context = browser.contexts()[0]
@@ -126,16 +143,27 @@ export async function executeOnlineSizeTemplateCommand(input: Command): Promise<
             return { type: "online_result", id, ok: true, data: await observe(page, input) }
         if (!input.cid || !input.templateName || !input.parameters?.length || !input.rows?.length || !input.expectedDefinition)
             throw new Error("在线填表计划不完整")
+        onlineCommandStore.markSizeFilling(id)
+        try { notifyProgress?.() } catch { /* Progress reporting is advisory. */ }
         const filled = await fillForm(page, input as TestFillCommand)
         await ensureAccount(page, input.expectedAccount)
-        saveStarted = true
-        const evidence = await saveOnce(page, input)
-        return { type: "online_result", id, ok: true, data: { ...filled, evidence } }
-    } catch (error) { return { type: "online_result", id, ok: false, data: { saveStarted },
+        const evidence = await saveOnce(page, input, notifyProgress)
+        // This is only a successful browser response, not proof of remote creation;
+        // the backend still reconciles the unique template through the account API.
+        const browserSuccess = evidence.request?.identityMatches === true
+            && evidence.request.name === input.templateName && evidence.request.cid === input.cid
+            && evidence.response?.result === "success" && evidence.response.httpStatus >= 200
+            && evidence.response.httpStatus < 300 && (!evidence.response.code || evidence.response.code === "success")
+            && evidence.modalClosed === true && !evidence.error
+        return { type: "online_result", id, ok: browserSuccess,
+            data: { ...filled, ...onlineCommandStore.sizeSubmissionState(id), evidence },
+            ...(!browserSuccess ? { error: evidence.error || "保存响应未明确成功，结果待只读核对" } : {}) }
+    } catch (error) { return { type: "online_result", id, ok: false,
+        data: writeCommand ? onlineCommandStore.sizeSubmissionState(id) : undefined,
         error: error instanceof Error ? error.message : String(error) } }
     finally {
         if (page && !page.isClosed()) await closeUnsaved(page)
         await browser?.close().catch(() => {})
-        if (writeCommand) setSizeBrowserWriteActive(false)
+        releaseWrite?.()
     }
 }

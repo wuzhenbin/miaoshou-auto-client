@@ -2,9 +2,9 @@ import type { Page } from "playwright"
 
 // Close website notices only, never a size-template form confirmation.
 export async function closeMiaoshouWebsiteDialogs(target: Page) {
-    const dialogs = target.locator(".jx-dialog:visible").filter({ hasNot: target.getByRole("heading", {
-        name: "创建尺码表模板", exact: true,
-    }) })
+    const dialogs = target.locator(".jx-overlay-dialog[role='dialog']:visible, .jx-dialog:visible:not(:has(.jx-overlay-dialog[role='dialog']))")
+        .filter({ hasNot: target.getByRole("heading", { name: "创建尺码表模板", exact: true }) })
+        .filter({ hasNot: target.locator(".base-item-edit-dialog") })
     for (let closed = 0; await dialogs.count(); closed++) {
         if (closed >= 10) throw new Error("网站弹窗持续出现，停止关闭")
         const dialog = dialogs.last()

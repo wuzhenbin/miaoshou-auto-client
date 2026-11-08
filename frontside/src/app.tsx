@@ -12,7 +12,7 @@ type BrowserStatus = { sizeTemplate: BrowserState; shared: BrowserState; modes: 
     inspections: Record<BrowserKind, BrowserInspection>; checkedAt: string }
 type ConnectionState = "credentials_required" | "login_required" | "unsupported_account" | "connecting"
     | "online" | "offline" | "unauthorized" | "unavailable" | "queue_conflict"
-type ConnectionStatus = { state: ConnectionState; account: string | null; credentialsSet: boolean }
+type ConnectionStatus = { state: ConnectionState; account: string | null; credentialsSet: boolean; local?: boolean }
 type MiaoshouLogin = { phase: "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown";
     account: string | null; message: string }
 type AlibabaLogin = { phase: "idle" | "opening" | "waiting_scan" | "scanned" | "verification_required" | "signed_in" | "expired" | "failed";
@@ -205,12 +205,13 @@ export function App() {
                 <Tag color={connection ? connectionLabels[connection.state].color : "processing"}>
                     {connection ? connectionLabels[connection.state].text : "读取中"}
                 </Tag>
-                <span>{connection?.account ? `妙手账号 ${connection.account.replace("account-", "")}` : ""}</span>
-                {connection?.credentialsSet && !editingCredentials &&
+                <span>{connection?.local ? "本机直连 · 妙手账号按本机配置核验"
+                    : connection?.account ? `妙手账号 ${connection.account.replace("account-", "")}` : ""}</span>
+                {connection?.credentialsSet && !connection.local && !editingCredentials &&
                     <Button icon={<Edit2 size={15} />} title="更改入口认证" aria-label="更改入口认证"
                         onClick={() => setEditingCredentials(true)} />}
             </div>
-            {(!connection?.credentialsSet || editingCredentials) &&
+            {!connection?.local && (!connection?.credentialsSet || editingCredentials) &&
                 <form className="credentials-form" onSubmit={event => void submitCredentials(event)}>
                     <label>Basic 用户名<Input value={username} onChange={event => setUsername(event.target.value)}
                         autoComplete="username" maxLength={128} required /></label>

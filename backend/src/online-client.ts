@@ -12,7 +12,7 @@ const reconnectMs = 30_000
 const ackTimeoutMs = 25_000
 
 export type OnlineConnectionState = "online" | "offline" | "unauthorized" | "unavailable"
-export type OnlineClientOptions = { base: string; basicUsername: string; basicPassword: string;
+export type OnlineClientOptions = { base: string; basicUsername?: string; basicPassword?: string;
     onStatus: (state: OnlineConnectionState) => void }
 
 export class OnlineCommandQueueConflictError extends Error {}
@@ -20,13 +20,15 @@ export class OnlineCommandQueueConflictError extends Error {}
 export function startOnlineClient({ base, basicUsername, basicPassword, onStatus }: OnlineClientOptions) {
     const target = new URL("auth/online-client/heartbeat", `${base.replace(/\/+$/, "")}/`)
     const resultTarget = new URL("auth/online-client/result", `${base.replace(/\/+$/, "")}/`)
+    const progressTarget = new URL("auth/online-client/command-progress", `${base.replace(/\/+$/, "")}/`)
     const websocketTarget = new URL("auth/online-client/ws", `${base.replace(/\/+$/, "")}/`)
     if (!onlineCommandStore.bindTarget(target.origin + target.pathname))
         throw new OnlineCommandQueueConflictError("在线命令队列仍有未确认业务命令，不能切换业务后端地址")
     websocketTarget.protocol = target.protocol === "https:" ? "wss:" : "ws:"
     if (!["http:", "https:"].includes(target.protocol)) throw new Error("业务后端地址必须使用 HTTP 或 HTTPS")
-    const headers: Record<string, string> = { "Content-Type": "application/json",
-        Authorization: `Basic ${Buffer.from(`${basicUsername}:${basicPassword}`).toString("base64")}` }
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (basicUsername !== undefined && basicPassword !== undefined)
+        headers.Authorization = `Basic ${Buffer.from(`${basicUsername}:${basicPassword}`).toString("base64")}`
     let stopped = false
     let busy = false
     let socket: WebSocket | null = null
@@ -38,6 +40,7 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
     let lastKnownAccountAt = 0
     let sizeTemplateConcurrency = 0
     let deliveringResults = false
+    let deliveringProgress = false
     const warnedOrphans = new Set<string>()
     const readHeartbeatAccount = async () => {
         const inspected = await inspectMiaoshouAccountState()
@@ -52,6 +55,27 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
             return null
         }
         return lastKnownAccount && Date.now() - lastKnownAccountAt < 60_000 ? lastKnownAccount : null
+    }
+    const deliverProgress = async () => {
+        if (stopped || deliveringProgress) return
+        deliveringProgress = true
+        try {
+            const account = await readHeartbeatAccount()
+            if (stopped || !account || !onlineCommandStore.bindAccount(account)) return
+            // Only identifiers and timestamps leave the client. Never include form plans or product values.
+            for (let attempt = 0; attempt < 30 && !stopped; attempt++) {
+                const progress = onlineCommandStore.progress()
+                if (!progress) break
+                const response = await fetch(progressTarget, { method: "POST", headers,
+                    body: JSON.stringify({ clientId, account, ...progress }), signal: AbortSignal.timeout(4000) })
+                if (response.ok || response.status === 409
+                    || response.status === 400 && Date.now() - Date.parse(progress.occurredAt) > 24 * 60 * 60 * 1000) {
+                    // Retire only the advisory cursor; never alter command state, result or save evidence.
+                    onlineCommandStore.ackProgress(progress.commandId, progress.stage)
+                } else break
+            }
+        } catch { /* Advisory only; retry from SQLite on the next heartbeat. */ }
+        finally { deliveringProgress = false }
     }
     const deliverResults = async () => {
         if (stopped || deliveringResults) return
@@ -89,12 +113,14 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
     }
     const pumpCommands = createOnlineCommandPump(onlineCommandStore,
         message => message.type?.startsWith("browser_")
-            ? executeOnlineBrowserCommand(message) : executeOnlineSizeTemplateCommand(message),
-        deliverResults, () => !stopped && accountReady, () => sizeTemplateConcurrency)
+            ? executeOnlineBrowserCommand(message) : executeOnlineSizeTemplateCommand(message, () => { void deliverProgress() }),
+        async () => { void deliverProgress(); await deliverResults() },
+        () => !stopped && accountReady, () => sizeTemplateConcurrency)
     const executeCommand = (message: StoredCommand) => {
         if (stopped) return
         if (onlineCommandStore.receive(message)) {
             pumpCommands()
+            void deliverProgress()
             void deliverResults()
         }
     }
@@ -148,6 +174,7 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
             const body = JSON.stringify({ clientId, account, commandAcks: onlineCommandStore.commandAcks() })
             if (socket?.readyState === WebSocket.OPEN && Date.now() - lastAckAt < ackTimeoutMs) {
                 socket.send(body)
+                void deliverProgress()
                 void deliverResults()
                 return
             }
@@ -164,6 +191,7 @@ export function startOnlineClient({ base, basicUsername, basicPassword, onStatus
                     && received.sizeTemplateConcurrency! >= 1 && received.sizeTemplateConcurrency! <= 10
                     ? received.sizeTemplateConcurrency! : 0
                 for (const command of received.commands ?? (received.command ? [received.command] : [])) executeCommand(command)
+                void deliverProgress()
                 void deliverResults()
             }
         } catch (error) { onStatus("unavailable"); console.warn("在线客户端报到失败", error) }

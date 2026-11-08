@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { createOnlineCommandPump } from '../src/online-command-pump.ts'
+import { acquireSizeBrowserWrite, isSizeBrowserWriteActive } from '../src/size-browser-recovery-state.ts'
 
 const queued = Array.from({ length: 5 }, (_, index) => ({ id: String(index), type: 'size_template_create' }))
 queued.splice(4, 0, { id: 'browser', type: 'browser_status' })
@@ -43,4 +44,11 @@ assert.deepEqual([...active.keys()], ['4'])
 active.get('4')()
 await tick()
 assert.deepEqual(finished, ['0', '1', '2', '3', 'browser', '4'])
-console.log('PASS online command pump: three size commands, dynamic reduction, exclusive browser command')
+const releaseFirst = acquireSizeBrowserWrite()
+const releaseSecond = acquireSizeBrowserWrite()
+assert.equal(isSizeBrowserWriteActive(), true)
+releaseFirst()
+assert.equal(isSizeBrowserWriteActive(), true, 'another size save still owns browser protection')
+releaseSecond()
+assert.equal(isSizeBrowserWriteActive(), false)
+console.log('PASS online command pump: three size commands, dynamic reduction, exclusive browser command and write protection')

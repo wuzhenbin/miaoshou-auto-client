@@ -1,5 +1,6 @@
 import { chromium, type Page } from "playwright"
 import { connectOverCdp } from "./cdp-connection.js"
+import { closeMiaoshouWebsiteDialogs } from "./miaoshou-dialogs.js"
 
 export type TestFillCommand = { type: "test_fill"; id: string; taskId: string; categoryPath: string;
     expectedAccount: string;
@@ -118,7 +119,17 @@ export async function readDefinition(page: Page): Promise<SizeTemplateDefinition
 
 export async function fillForm(page: Page, command: TestFillCommand) {
     await page.goto(managementUrl, { waitUntil: "domcontentloaded", timeout: 20_000 })
-    await page.getByRole("button", { name: "创建尺码表模板", exact: true }).click({ timeout: 15_000 })
+    await page.locator(".jx-overlay-dialog.service-expiring-dialog:visible")
+        .waitFor({ state: "visible", timeout: 1500 }).catch(() => {})
+    await closeMiaoshouWebsiteDialogs(page)
+    const create = page.getByRole("button", { name: "创建尺码表模板", exact: true })
+    try { await create.click({ timeout: 5000 }) }
+    catch (error) {
+        if (!(error instanceof Error) || error.name !== "TimeoutError" ||
+            !await page.locator(".jx-overlay-dialog.service-expiring-dialog:visible").count()) throw error
+        await closeMiaoshouWebsiteDialogs(page)
+        await create.click({ timeout: 10000 })
+    }
     const modal = page.locator(".base-item-edit-dialog:visible").filter({
         has: page.getByRole("heading", { name: "创建尺码表模板", exact: true }),
     })

@@ -4,6 +4,8 @@ type CommandStore = {
     next(): StoredCommand | null
     start(id: string): boolean
     finish(result: StoredResult): void
+    sizeSubmissionState?(id: string): { saveStarted: boolean; saveOutcome: "not_submitted" | "uncertain";
+        evidence?: unknown }
 }
 
 export function createOnlineCommandPump(store: CommandStore,
@@ -23,7 +25,9 @@ export function createOnlineCommandPump(store: CommandStore,
             else activeOther = true
             void Promise.resolve().then(() => execute(command)).catch(error => ({
                 type: "online_result" as const, id: command.id!, ok: false,
-                data: { saveStarted: ["size_template_create", "browser_goods_model_create"].includes(command.type!) },
+                data: command.type === "size_template_create"
+                    ? store.sizeSubmissionState?.(command.id!) ?? { saveStarted: true, saveOutcome: "uncertain" }
+                    : { saveStarted: command.type === "browser_goods_model_create" },
                 error: error instanceof Error ? error.message.split("\n")[0] : "客户端命令异常",
             })).then(result => {
                 store.finish(result)

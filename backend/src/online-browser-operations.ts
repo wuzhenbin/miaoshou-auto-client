@@ -93,7 +93,9 @@ async function recoverSizeBrowser(connectBrowser: () => Promise<BrowserAttachmen
         try {
             const attached = await connectBrowser()
             browser = attached.browser
+            if (isSizeBrowserWriteActive()) return
             const page = attached.context.pages()[0] ?? await attached.context.newPage()
+            if (isSizeBrowserWriteActive()) return
             await page.goto(miaoshouBaseUrl, { waitUntil: "domcontentloaded", timeout: 15_000 })
             invalidateMiaoshouAccountInspection()
             const session = await readMiaoshouSession(browser)
