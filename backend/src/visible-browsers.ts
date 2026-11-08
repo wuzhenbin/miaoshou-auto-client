@@ -104,7 +104,7 @@ async function openBrowser(kind: BrowserKind, headless = false) {
     child.on("error", error => { launchError = error })
     child.on("exit", () => { exited = true; if (child.pid) ownedBrowsers.delete(child.pid) })
     child.unref()
-    if (headless && child.pid) ownedBrowsers.add(child.pid)
+    if (child.pid) ownedBrowsers.add(child.pid)
     for (let attempt = 0; attempt < 40; attempt++) {
         await delay(200)
         if (launchError) throw launchError

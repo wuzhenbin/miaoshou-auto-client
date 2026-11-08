@@ -252,10 +252,10 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
             const session = await inspectSession()
             if (session.state === "logged_in" && session.account)
                 setState("logged_in", "妙手已登录", session.account)
-            else if ((state.phase === "logged_in" || state.phase === "unknown") && session.state === "not_logged_in")
-                setState("idle", "妙手登录已失效", null)
-            else if (state.phase === "logged_in" && session.state === "unknown")
-                setState("unknown", "妙手登录状态待确认", null)
+            else if (state.phase !== "captcha_required") {
+                if (session.state === "not_logged_in") setState("idle", "妙手未登录", null)
+                else setState("unknown", "妙手登录状态待确认", null)
+            }
         }
         const credentials = await loadMiaoshouCredentials(runtimeRoot())
         return { ...state, configuredAccount: credentials?.account ?? null,
