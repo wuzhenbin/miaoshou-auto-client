@@ -116,6 +116,7 @@ export async function readSizeBrowserState(connectBrowser = () => connect(9223),
         browser = attached.browser
         const pages = attached.context.pages()
         if (!pages.length || pages.every(page => page.url() === "about:blank")) {
+            if (!managedBrowser()) return pages.length ? "unknown" : "disconnected"
             await recoverSizeBrowser(connectBrowser)
             const retry = await connectBrowser()
             browser = retry.browser
