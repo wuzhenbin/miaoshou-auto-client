@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Cpu, Edit2, LogOut, Play, RefreshCw } from "react-feather"
+import { Cpu, Edit2, Play, RefreshCw } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -237,13 +237,6 @@ export function App() {
                     : miaoshouLogin?.phase === "unknown" ? "妙手登录状态待确认"
                     : "请在妙手浏览器窗口登录"}</span>
             </div>
-            {miaoshouLogin?.phase === "logged_in" && <div className="login-actions">
-                <Button icon={<LogOut size={15} />} loading={loginBusy} disabled={loginBusy}
-                    onClick={() => void loginAction(async () => {
-                        setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)
-                        setRevision(value => value + 1)
-                    })}>退出登录</Button>
-            </div>}
             </article>
             <article className="browser-panel" aria-label="通用自动化">
             {browserHeading("shared", "通用自动化")}

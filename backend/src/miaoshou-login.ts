@@ -242,6 +242,8 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
         return { configuredAccount: account.trim() }
     })
     app.post("/miaoshou-login/logout", async (_request, reply) => {
+        if (browserMode("sizeTemplate") === "visible")
+            return reply.code(409).send({ error: { message: "请在妙手浏览器窗口退出登录" } })
         if (busy) return reply.code(409).send({ error: { message: "妙手登录操作正在进行，请稍后退出" } })
         if (connection && !connection.pauseForLogout())
             return reply.code(409).send({ error: { message: "仍有未完成或未确认的命令，请等待任务收尾后退出" } })
