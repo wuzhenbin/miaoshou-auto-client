@@ -4,6 +4,7 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import { chromium, type Page, type Request, type Response } from "playwright"
 import { connectOverCdp } from "./cdp-connection.js"
+import { setSizeBrowserWriteActive } from "./size-browser-recovery-state.js"
 import { fillForm, managementUrl, readDefinition, selectCategory, selectSizeClass,
     testFillSizeTemplate, type SizeTemplateDefinition, type TestFillCommand } from "./size-template-test-fill.js"
 
@@ -113,6 +114,8 @@ export async function executeOnlineSizeTemplateCommand(input: Command): Promise<
     let browser: Awaited<ReturnType<typeof chromium.connectOverCDP>> | undefined
     let page: Page | undefined
     let saveStarted = false
+    const writeCommand = input.type === "size_template_create"
+    if (writeCommand) setSizeBrowserWriteActive(true)
     try {
         browser = await connectOverCdp("http://127.0.0.1:9223")
         const context = browser.contexts()[0]
@@ -133,5 +136,6 @@ export async function executeOnlineSizeTemplateCommand(input: Command): Promise<
     finally {
         if (page && !page.isClosed()) await closeUnsaved(page)
         await browser?.close().catch(() => {})
+        if (writeCommand) setSizeBrowserWriteActive(false)
     }
 }

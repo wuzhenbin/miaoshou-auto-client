@@ -3,13 +3,19 @@ import { connectOverCdp } from "./cdp-connection.js"
 import { ensureAccount } from "./size-template-online-client.js"
 import { createGoodsModelOnce } from "./online-goods-model.js"
 import { browserMode } from "./visible-browsers.js"
-import { readMiaoshouSession } from "./browser-inspection.js"
+import { invalidateMiaoshouAccountInspection, readMiaoshouSession } from "./browser-inspection.js"
+import { isSizeBrowserWriteActive } from "./size-browser-recovery-state.js"
 
 type Command = { type?: string; id?: string; taskId?: string; expectedAccount?: string;
     url?: string; detailId?: string; shopId?: string; mode?: "shop" | "site"; input?: Record<string, unknown> }
 type Result = { type: "online_result"; id: string; ok: boolean; data?: unknown; error?: string }
 const itemsUrl = "https://erp.91miaoshou.com/pddkj_choice/collect_box/items"
-
+const miaoshouBaseUrl = "https://erp.91miaoshou.com/"
+const recoveryBackoffBaseMs = 15_000
+const recoveryBackoffMaxMs = 120_000
+let sizeBrowserRecoveryAt = 0
+let sizeBrowserRecoveryFailures = 0
+let sizeBrowserRecovery: Promise<void> | null = null
 function allowed1688Url(value: string) {
     const url = new URL(value)
     return url.protocol === "https:" && !url.username && !url.password && (
@@ -67,14 +73,56 @@ async function connect(port: number) {
     return { browser, context }
 }
 
-export async function readSizeBrowserState(connectBrowser = () => connect(9223)) {
+type BrowserAttachment = Awaited<ReturnType<typeof connect>>
+
+function isManagedSizeBrowser() {
+    try {
+        const mode = browserMode("sizeTemplate")
+        return mode === "visible" || mode === "headless"
+    } catch { return false }
+}
+
+async function recoverSizeBrowser(connectBrowser: () => Promise<BrowserAttachment>) {
+    if (isSizeBrowserWriteActive() || sizeBrowserRecovery) return
+    const now = Date.now()
+    const cooldown = Math.min(recoveryBackoffMaxMs, recoveryBackoffBaseMs * 2 ** Math.min(sizeBrowserRecoveryFailures, 3))
+    if (now - sizeBrowserRecoveryAt < cooldown) return
+    sizeBrowserRecoveryAt = now
+    sizeBrowserRecovery = (async () => {
+        let browser: Browser | undefined
+        try {
+            const attached = await connectBrowser()
+            browser = attached.browser
+            const page = attached.context.pages()[0] ?? await attached.context.newPage()
+            await page.goto(miaoshouBaseUrl, { waitUntil: "domcontentloaded", timeout: 15_000 })
+            invalidateMiaoshouAccountInspection()
+            const session = await readMiaoshouSession(browser)
+            if (session.state === "logged_in") sizeBrowserRecoveryFailures = 0
+            else sizeBrowserRecoveryFailures++
+        } catch {
+            sizeBrowserRecoveryFailures++
+        } finally {
+            await browser?.close().catch(() => {})
+            sizeBrowserRecovery = null
+        }
+    })()
+    return sizeBrowserRecovery
+}
+
+export async function readSizeBrowserState(connectBrowser = () => connect(9223), managedBrowser = isManagedSizeBrowser) {
     let browser: Browser | undefined
     try {
         const attached = await connectBrowser()
         browser = attached.browser
         const pages = attached.context.pages()
-        if (!pages.length) return "disconnected"
-        if (pages.every(page => page.url() === "about:blank")) return "idle"
+        if (!pages.length || pages.every(page => page.url() === "about:blank")) {
+            await recoverSizeBrowser(connectBrowser)
+            const retry = await connectBrowser()
+            browser = retry.browser
+            const retryPages = retry.context.pages()
+            if (!retryPages.length) return "disconnected"
+        }
+        invalidateMiaoshouAccountInspection()
         const session = await readMiaoshouSession(browser)
         return session.state === "logged_in" ? "ready"
             : session.state === "not_logged_in" ? "waiting_login" : "unknown"
@@ -128,6 +176,9 @@ export async function executeOnlineBrowserCommand(command: Command): Promise<Res
         return { type: "online_result", id, ok: false,
             error: error instanceof Error ? error.message.split("\n")[0] : "客户端浏览器操作失败" }
     } finally {
+        // A browser command may change the session or crash during recovery. Do not
+        // let the heartbeat reuse a stale account inspection result afterward.
+        invalidateMiaoshouAccountInspection()
         await page?.close().catch(() => {})
         await browser?.close().catch(() => {})
     }
