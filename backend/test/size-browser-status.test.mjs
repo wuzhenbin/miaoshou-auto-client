@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readSizeBrowserState } from '../src/online-browser-operations.ts'
+import { invalidateMiaoshouAccountInspection } from '../src/browser-inspection.ts'
 
 test('size browser readiness follows the session without a management page', async () => {
     let account = { result: 'success', mobile: '185****3210' }
@@ -13,7 +14,9 @@ test('size browser readiness follows the session without a management page', asy
 
     assert.equal(await readSizeBrowserState(connect), 'ready')
     account = { result: 'fail' }
+    invalidateMiaoshouAccountInspection()
     assert.equal(await readSizeBrowserState(connect), 'waiting_login')
     context.request.get = async () => { throw new Error('network unavailable') }
+    invalidateMiaoshouAccountInspection()
     assert.equal(await readSizeBrowserState(connect), 'unknown')
 })

@@ -1,4 +1,5 @@
 import { chromium, type Browser } from "playwright"
+import { setTimeout as delay } from "node:timers/promises"
 
 export type WindowState = "open" | "minimized" | "unknown"
 export type LoginState = "logged_in" | "not_logged_in" | "unknown"
@@ -9,6 +10,22 @@ type BrowserKind = "sizeTemplate" | "shared"
 type WindowBounds = { windowState: string }
 
 const unknownSession: LoginSession = { state: "unknown", account: null }
+type MiaoshouAccountState = { state: LoginState; account: MiaoshouAccount | null }
+const unknownAccountState: MiaoshouAccountState = { state: "unknown", account: null }
+const accountCheckIntervalMs = 8000
+let accountCache: { at: number; value: MiaoshouAccountState } | null = null
+let accountCheck: Promise<MiaoshouAccountState> | null = null
+let lastAccountCheckAt = 0
+let accountRateLimitedUntil = 0
+let accountGeneration = 0
+
+export function invalidateMiaoshouAccountInspection() {
+    accountGeneration++
+    accountCache = null
+    accountCheck = null
+    lastAccountCheckAt = 0
+    accountRateLimitedUntil = 0
+}
 
 async function withBrowser<T>(kind: BrowserKind, action: (browser: Browser) => Promise<T>): Promise<T> {
     const port = kind === "sizeTemplate" ? 9223 : 9224
@@ -43,20 +60,43 @@ async function readWindow(browser: Browser): Promise<WindowState> {
     } finally { await cdp.detach().catch(() => {}) }
 }
 
-async function readMiaoshouAccountState(browser: Browser): Promise<{ state: LoginState; account: MiaoshouAccount | null }> {
+async function readMiaoshouAccountState(browser: Browser): Promise<MiaoshouAccountState> {
     const context = browser.contexts()[0]
-    if (!context) return { state: "unknown", account: null }
+    if (!context) return unknownAccountState
+    if (accountCache && Date.now() - accountCache.at < accountCheckIntervalMs)
+        return accountCache.value
+    if (accountCheck) return accountCheck
+    if (Date.now() < accountRateLimitedUntil) return unknownAccountState
+    const generation = accountGeneration
+    const check = (async () => {
+        const remaining = lastAccountCheckAt + accountCheckIntervalMs - Date.now()
+        if (remaining > 0) await delay(remaining)
+        lastAccountCheckAt = Date.now()
+        try {
+            const response = await context.request.get("https://erp.91miaoshou.com/api/auth/account/getAccountInfo", { timeout: 4000 })
+            if (response.status() === 401 || response.status() === 403)
+                return { state: "not_logged_in", account: null } as MiaoshouAccountState
+            if (!response.ok()) return unknownAccountState
+            const info = await response.json() as Record<string, unknown>
+            if (info.result !== "success") {
+                if (typeof info.reason === "string" && info.reason.includes("请求太频繁")) {
+                    if (generation === accountGeneration) accountRateLimitedUntil = Date.now() + 30_000
+                    return unknownAccountState
+                }
+                return { state: "not_logged_in", account: null } as MiaoshouAccountState
+            }
+            const account = Object.fromEntries(["mobile", "accountName", "email"]
+                .filter(key => typeof info[key] === "string" && (info[key] as string).trim())
+                .map(key => [key, (info[key] as string).trim()])) as MiaoshouAccount
+            return Object.keys(account).length ? { state: "logged_in", account } as MiaoshouAccountState : unknownAccountState
+        } catch { return unknownAccountState }
+    })()
+    accountCheck = check
     try {
-        const response = await context.request.get("https://erp.91miaoshou.com/api/auth/account/getAccountInfo", { timeout: 4000 })
-        if (response.status() === 401 || response.status() === 403) return { state: "not_logged_in", account: null }
-        if (!response.ok()) return { state: "unknown", account: null }
-        const info = await response.json() as Record<string, unknown>
-        if (info.result !== "success") return { state: "not_logged_in", account: null }
-        const account = Object.fromEntries(["mobile", "accountName", "email"]
-            .filter(key => typeof info[key] === "string" && (info[key] as string).trim())
-            .map(key => [key, (info[key] as string).trim()])) as MiaoshouAccount
-        return Object.keys(account).length ? { state: "logged_in", account } : { state: "unknown", account: null }
-    } catch { return { state: "unknown", account: null } }
+        const result = await check
+        if (generation === accountGeneration) accountCache = { at: Date.now(), value: result }
+        return result
+    } finally { if (accountCheck === check) accountCheck = null }
 }
 
 export async function readMiaoshouSession(browser: Browser): Promise<LoginSession> {

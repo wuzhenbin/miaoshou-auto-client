@@ -5,7 +5,7 @@ import { isAbsolute, join } from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { chromium } from "playwright"
 import type { FastifyInstance } from "fastify"
-import { inspectBrowser, setWindowVisibility } from "./browser-inspection.js"
+import { inspectBrowser, invalidateMiaoshouAccountInspection, setWindowVisibility } from "./browser-inspection.js"
 import { clearMiaoshouSession, restoreMiaoshouSession, saveMiaoshouSession } from "./browser-session.js"
 import { dismissMiaoshouLoginNotices } from "./miaoshou-dialogs.js"
 
@@ -79,18 +79,11 @@ async function openBrowser(kind: BrowserKind, headless = false) {
     if (mode === "headless" && headless) return
     if (mode === "visible" && !headless) {
         await setWindowVisibility(kind, "open")
-        if (kind === "sizeTemplate" && (await inspectBrowser(kind)).session.state === "not_logged_in") {
-            const attached = await chromium.connectOverCDP(`http://127.0.0.1:${setting.port}`, { timeout: 3000 })
-            try {
-                const page = attached.contexts()[0]?.pages().find(candidate => candidate.url().startsWith(setting.startUrl))
-                if (page && page.url() !== setting.startUrl)
-                    await page.goto(setting.startUrl, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {})
-            } finally { await attached.close() }
-        }
         return
     }
     if (mode !== "stopped") throw new Error(mode === "headless" ? "无头浏览器仍在运行，请先结束任务并关闭该实例"
         : "浏览器端口已被其他进程占用")
+    if (kind === "sizeTemplate") invalidateMiaoshouAccountInspection()
     const executable = chromium.executablePath()
     if (!existsSync(executable)) throw new Error("Chromium 尚未安装，请在客户端仓库的 backend/ 执行 npm run browser:install")
     const root = runtimeRoot()

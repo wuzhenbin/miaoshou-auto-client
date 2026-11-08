@@ -3,7 +3,7 @@ import { browserMode, pauseMiaoshouSessionPersistence, resumeMiaoshouSessionPers
 import { activateSavedMiaoshouCredentials, clearMiaoshouCredentials, clearMiaoshouSession,
     loadMiaoshouCredentials, loadSavedMiaoshouCredentials, rememberCurrentMiaoshouCredentials,
     saveMiaoshouCredentials } from "./browser-session.js"
-import { inspectMiaoshouAccount, inspectMiaoshouSession, type LoginSession } from "./browser-inspection.js"
+import { inspectMiaoshouAccount, inspectMiaoshouSession, invalidateMiaoshouAccountInspection, type LoginSession } from "./browser-inspection.js"
 import { dismissMiaoshouLoginNotices } from "./miaoshou-dialogs.js"
 export { closeMiaoshouWebsiteDialogs, dismissMiaoshouLoginNotices } from "./miaoshou-dialogs.js"
 import type { FastifyInstance } from "fastify"
@@ -37,10 +37,8 @@ function matches(expected: string, value: unknown) {
 }
 
 async function confirmedAccount(expected: string) {
-    const response = await page!.context().request.get("https://erp.91miaoshou.com/api/auth/account/getAccountInfo", { timeout: 5000 })
-    if (!response.ok()) return false
-    const info = await response.json() as Record<string, unknown>
-    return info.result === "success" && [info.mobile, info.accountName, info.email].some(value => matches(expected, value))
+    const info = await inspectMiaoshouAccount()
+    return Boolean(info && [info.mobile, info.accountName, info.email].some(value => matches(expected, value)))
 }
 
 async function captureCaptcha(force = false) {
@@ -109,7 +107,7 @@ async function finishLogin(account: string) {
 
 async function start() {
     if (busy) throw new Error("妙手登录正在进行")
-    if (!["headless", "visible"].includes(browserMode("sizeTemplate"))) throw new Error("请先启动妙手浏览器")
+    if (browserMode("sizeTemplate") !== "headless") throw new Error("请先启动妙手无头浏览器")
     const credentials = await loadMiaoshouCredentials(runtimeRoot())
     if (!credentials) throw new Error("请先保存妙手登录账号和密码")
     busy = true
@@ -123,8 +121,9 @@ async function start() {
         page = context.pages().find(candidate => candidate.url().startsWith("https://erp.91miaoshou.com"))
             ?? context.pages()[0] ?? await context.newPage()
         await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: 30000 })
-        if (await confirmedAccount(credentials.account).catch(() => false))
-            return await finishLogin(credentials.account)
+        const existingAccount = await inspectMiaoshouAccount()
+        if (existingAccount && [existingAccount.mobile, existingAccount.accountName, existingAccount.email]
+            .some(value => matches(credentials.account, value))) return await finishLogin(credentials.account)
         const loginPage = page.locator('input[type="password"]')
         try { await loginPage.waitFor({ state: "visible", timeout: 15000 }) }
         catch {
@@ -183,6 +182,7 @@ async function submitCaptcha(code: string) {
             }
             return setState("failed", "妙手拒绝登录，请核对账号和密码", credentials.account)
         }
+        invalidateMiaoshouAccountInspection()
         for (let attempt = 0; attempt < 30; attempt++) {
             if (await confirmedAccount(credentials.account).catch(() => false))
                 return await finishLogin(credentials.account)
@@ -213,7 +213,8 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
             const session = await inspectSession()
             if (session.state === "logged_in" && session.account)
                 setState("logged_in", "妙手已登录", session.account)
-            else if (state.phase !== "captcha_required" && state.phase !== "failed") {
+            else if (browserMode("sizeTemplate") === "visible"
+                || state.phase !== "captcha_required" && state.phase !== "failed") {
                 if (session.state === "not_logged_in") setState("idle", "妙手未登录", null)
                 else setState("unknown", "妙手登录状态待确认", null)
             }
@@ -234,7 +235,7 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
         const account = request.body?.account
         if (typeof account !== "string" || !account.trim() || account.length > 128)
             return reply.code(400).send({ error: { message: "请选择已保存的妙手账号" } })
-        if (busy || browserMode("sizeTemplate") !== "stopped" && (await inspectSession()).state !== "not_logged_in")
+        if (busy || browserMode("sizeTemplate") !== "stopped" && (await inspectSession()).state === "logged_in")
             return reply.code(409).send({ error: { message: "请先退出当前妙手账号，或等待登录状态确认" } })
         if (!await activateSavedMiaoshouCredentials(runtimeRoot(), account))
             return reply.code(404).send({ error: { message: "该妙手账号未保存在本机" } })
@@ -258,6 +259,7 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
             const cdp = await context.newCDPSession(context.pages()[0] ?? await context.newPage())
             try { await cdp.send("Storage.clearDataForOrigin", { origin: "https://erp.91miaoshou.com", storageTypes: "all" }) }
             finally { await cdp.detach() }
+            invalidateMiaoshouAccountInspection()
             const session = await inspectMiaoshouSession()
             if (session.state !== "not_logged_in")
                 throw new Error("妙手退出状态无法确认，请刷新状态后重试")
@@ -265,7 +267,7 @@ export function registerMiaoshouLoginRoutes(app: FastifyInstance,
             image = null
             imageSource = ""
             page = null
-            setState("idle", "妙手已退出，请输入账号和密码", null)
+            setState("idle", "妙手已退出，请在浏览器窗口登录", null)
             return { ...state, configuredAccount: null,
                 savedAccounts: (await loadSavedMiaoshouCredentials(runtimeRoot())).map(item => item.account) }
         } catch (error) {

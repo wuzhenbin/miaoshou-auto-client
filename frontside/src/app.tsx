@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Cpu, Edit2, LogIn, LogOut, Play, RefreshCw } from "react-feather"
+import { Cpu, Edit2, LogOut, Play, RefreshCw } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -14,9 +14,7 @@ type ConnectionState = "credentials_required" | "login_required" | "unsupported_
     | "online" | "offline" | "unauthorized" | "unavailable" | "queue_conflict"
 type ConnectionStatus = { state: ConnectionState; account: string | null; credentialsSet: boolean }
 type MiaoshouLogin = { phase: "idle" | "loading" | "captcha_required" | "submitting" | "logged_in" | "failed" | "unknown";
-    account: string | null; configuredAccount: string | null; message: string; imageVersion: number;
-    imageDataUrl: string | null; imageSourceType: "original" | "rendered" | null; savedAccounts: string[] }
-type MiaoshouLoginAction = Omit<MiaoshouLogin, "configuredAccount" | "savedAccounts">
+    account: string | null; message: string }
 type AlibabaLogin = { phase: "idle" | "opening" | "waiting_scan" | "scanned" | "verification_required" | "signed_in" | "expired" | "failed";
     message: string; qrAvailable: boolean; smsRetryAfterSeconds: number }
 
@@ -51,20 +49,10 @@ export function App() {
     const [submittingCredentials, setSubmittingCredentials] = useState(false)
     const [miaoshouLogin, setMiaoshouLogin] = useState<MiaoshouLogin | null>(null)
     const [alibabaLogin, setAlibabaLogin] = useState<AlibabaLogin | null>(null)
-    const [loginAccount, setLoginAccount] = useState("")
-    const [loginPassword, setLoginPassword] = useState("")
-    const [savedAccount, setSavedAccount] = useState<string | undefined>()
-    const [editingLogin, setEditingLogin] = useState(false)
-    const [captchaCode, setCaptchaCode] = useState("")
     const [smsCode, setSmsCode] = useState("")
     const [qrVersion, setQrVersion] = useState(0)
     const [loginBusy, setLoginBusy] = useState(false)
     const [loginError, setLoginError] = useState("")
-    const applyMiaoshouLoginAction = (result: MiaoshouLoginAction) => {
-        setMiaoshouLogin(previous => ({ ...result,
-            configuredAccount: previous?.configuredAccount ?? null,
-            savedAccounts: previous?.savedAccounts ?? [] }))
-    }
     useEffect(() => {
         const controller = new AbortController()
         let timer: ReturnType<typeof setTimeout>
@@ -179,8 +167,6 @@ export function App() {
             const result = await response.json() as { error?: { message?: string } }
             if (!response.ok) throw new Error(result.error?.message ?? "浏览器窗口打开失败")
             setRevision(value => value + 1)
-            if (kind === "sizeTemplate" && status?.modes.sizeTemplate === "stopped" && miaoshouLogin?.configuredAccount)
-                applyMiaoshouLoginAction(await postLogin("/miaoshou-login/start") as MiaoshouLoginAction)
             if (kind === "shared") setAlibabaLogin(await postLogin("/alibaba-login/start") as AlibabaLogin)
         } catch (cause) { setActionError(cause instanceof Error ? cause.message : "浏览器窗口打开失败") }
         finally { setOpening(null) }
@@ -191,7 +177,9 @@ export function App() {
             <div><span className="browser-kicker">{kind === "sizeTemplate" ? "CDP 9223" : "CDP 9224"}</span><h3>{name}</h3></div>
             {mode === "stopped" && <Button type="primary" loading={opening === kind} disabled={opening !== null}
                 icon={<Play size={15} />} onClick={() => void changeWindow(kind)}>启动</Button>}
-            {mode === "headless" && <span className="browser-running"><span className="status-dot" />运行中</span>}
+            {mode === "headless" && (kind === "sizeTemplate"
+                ? <span className="browser-note">无头实例运行中，请在任务空闲后关闭再启动可见窗口</span>
+                : <span className="browser-running"><span className="status-dot" />运行中</span>)}
             {mode === "visible" && (kind === "sizeTemplate"
                 ? <Button icon={<Play size={15} />} loading={opening === kind} disabled={opening !== null}
                     onClick={() => void changeWindow(kind)}>打开窗口</Button>
@@ -241,82 +229,20 @@ export function App() {
             <article className="browser-panel" aria-label="妙手尺码表">
             {browserHeading("sizeTemplate", "妙手尺码表")}
             <div className="connection-row">
-                <Tag color={miaoshouLogin?.phase === "logged_in" ? "success" : miaoshouLogin?.phase === "failed" ? "error" : "warning"}>
-                    {miaoshouLogin?.phase === "logged_in" ? "已登录" : miaoshouLogin?.phase === "captcha_required" ? "等待验证码"
-                        : miaoshouLogin?.phase === "unknown" ? "待确认" : "未登录"}
+                <Tag color={miaoshouLogin?.phase === "logged_in" ? "success" : "warning"}>
+                    {miaoshouLogin?.phase === "logged_in" ? "已登录" : miaoshouLogin?.phase === "unknown" ? "待确认" : "未登录"}
                 </Tag>
-                <span>{miaoshouLogin?.message ?? "读取中"}</span>
-                {miaoshouLogin?.configuredAccount && !editingLogin &&
-                    <Button icon={<Edit2 size={15} />} title="修改妙手凭证" aria-label="修改妙手凭证"
-                        onClick={() => setEditingLogin(true)} />}
+                <span>{miaoshouLogin?.phase === "logged_in" ? `妙手账号 ${miaoshouLogin.account}`
+                    : status?.modes.sizeTemplate === "stopped" ? "请启动妙手浏览器"
+                    : miaoshouLogin?.phase === "unknown" ? "妙手登录状态待确认"
+                    : "请在妙手浏览器窗口登录"}</span>
             </div>
-            {!miaoshouLogin?.configuredAccount && Boolean(miaoshouLogin?.savedAccounts?.length) &&
-                <div className="saved-account-row">
-                    <label>已保存账号<select value={savedAccount ?? ""}
-                        onChange={event => setSavedAccount(event.target.value || undefined)}>
-                        <option value="" disabled>选择妙手账号</option>
-                        {miaoshouLogin!.savedAccounts.map(account =>
-                            <option key={account} value={account}>{account}</option>)}
-                    </select></label>
-                    <Button disabled={!savedAccount || loginBusy} loading={loginBusy}
-                        onClick={() => void loginAction(async () => {
-                            const result = await postLogin("/miaoshou-login/credentials/select", { account: savedAccount })
-                            setMiaoshouLogin(value => value ? { ...value,
-                                configuredAccount: (result as { configuredAccount: string }).configuredAccount } : value)
-                            setSavedAccount(undefined)
-                        })}>使用账号</Button>
-                </div>}
-            {(!miaoshouLogin?.configuredAccount || editingLogin) &&
-                <form className="credentials-form" onSubmit={event => {
-                    event.preventDefault()
-                    void loginAction(async () => {
-                        const result = await postLogin("/miaoshou-login/credentials", { account: loginAccount, password: loginPassword }, "PUT")
-                        setMiaoshouLogin(value => value ? { ...value, configuredAccount: (result as { configuredAccount: string }).configuredAccount } : value)
-                        setLoginPassword("")
-                        setSavedAccount(undefined)
-                        setEditingLogin(false)
-                    })
-                }}>
-                    <label>妙手账号<Input value={loginAccount} onChange={event => setLoginAccount(event.target.value)} required maxLength={128} /></label>
-                    <label>妙手密码<Input.Password value={loginPassword} onChange={event => setLoginPassword(event.target.value)} required maxLength={256} /></label>
-                    <Button type="primary" htmlType="submit" loading={loginBusy}>保存</Button>
-                </form>}
-            {(miaoshouLogin?.configuredAccount || miaoshouLogin?.phase === "logged_in") && <div className="login-actions">
-                {miaoshouLogin.configuredAccount && <span>{miaoshouLogin.configuredAccount}</span>}
-                <Button icon={miaoshouLogin.phase === "logged_in" ? <LogOut size={15} /> : <LogIn size={15} />}
-                    loading={loginBusy} disabled={loginBusy || miaoshouLogin.phase !== "logged_in"
-                        && !["headless", "visible"].includes(status?.modes.sizeTemplate ?? "")}
+            {miaoshouLogin?.phase === "logged_in" && <div className="login-actions">
+                <Button icon={<LogOut size={15} />} loading={loginBusy} disabled={loginBusy}
                     onClick={() => void loginAction(async () => {
-                        if (miaoshouLogin.phase === "logged_in") {
-                            setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)
-                            setLoginAccount("")
-                            setLoginPassword("")
-                            setSavedAccount(undefined)
-                            setEditingLogin(false)
-                            setRevision(value => value + 1)
-                        } else {
-                            applyMiaoshouLoginAction(await postLogin("/miaoshou-login/start") as MiaoshouLoginAction)
-                        }
-                    })}>{miaoshouLogin.phase === "logged_in" ? "退出登录" : "登录妙手"}</Button>
-            </div>}
-            {miaoshouLogin?.phase === "captcha_required" && <div className="login-challenge">
-                <button className="captcha-image" title="刷新验证码" aria-label="刷新验证码" disabled={loginBusy}
-                    onClick={() => void loginAction(async () => {
-                        applyMiaoshouLoginAction(await postLogin("/miaoshou-login/captcha/refresh") as MiaoshouLoginAction)
-                        setCaptchaCode("")
-                    })}>
-                    {miaoshouLogin.imageDataUrl && <img src={miaoshouLogin.imageDataUrl} alt="妙手验证码" />}
-                </button>
-                {miaoshouLogin.imageSourceType === "rendered" &&
-                    <span className="captcha-source-note">妙手图片未提供 base64 地址，当前显示页面截图</span>}
-                <form className="challenge-form" onSubmit={event => {
-                    event.preventDefault()
-                    void loginAction(async () => {
-                        applyMiaoshouLoginAction(await postLogin("/miaoshou-login/captcha/submit", { code: captchaCode }) as MiaoshouLoginAction)
-                        setCaptchaCode("")
-                    })
-                }}><label>验证码<Input value={captchaCode} onChange={event => setCaptchaCode(event.target.value.replace(/\D/g, ""))}
-                    inputMode="numeric" maxLength={4} required /></label><Button type="primary" htmlType="submit" loading={loginBusy}>确认</Button></form>
+                        setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)
+                        setRevision(value => value + 1)
+                    })}>退出登录</Button>
             </div>}
             </article>
             <article className="browser-panel" aria-label="通用自动化">
