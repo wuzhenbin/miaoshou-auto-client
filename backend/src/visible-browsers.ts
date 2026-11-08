@@ -3,11 +3,12 @@ import { closeSync, existsSync, mkdirSync, openSync } from "node:fs"
 import { homedir } from "node:os"
 import { isAbsolute, join } from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
-import { chromium } from "playwright"
+import { chromium, type BrowserContext } from "playwright"
 import type { FastifyInstance } from "fastify"
-import { inspectBrowser, setWindowVisibility } from "./browser-inspection.js"
+import { inspectBrowser, readMiaoshouSession, setWindowVisibility } from "./browser-inspection.js"
 import { clearMiaoshouSession, restoreMiaoshouSession, saveMiaoshouSession } from "./browser-session.js"
 import { dismissMiaoshouLoginNotices } from "./miaoshou-dialogs.js"
+import { managementUrl } from "./size-template-test-fill.js"
 
 export type BrowserKind = "sizeTemplate" | "shared"
 export type BrowserMode = "visible" | "headless" | "unmanaged" | "stopped"
@@ -159,6 +160,28 @@ function assertLocalCdp(kind: BrowserKind) {
         throw new Error("当前 CDP 指向其他主机或端口，不能操作本机浏览器窗口")
 }
 
+export async function openSizeTemplateManagementPage(context: BrowserContext) {
+    const target = new URL(managementUrl)
+    const existing = context.pages().find(page => {
+        try {
+            const current = new URL(page.url())
+            return current.origin === target.origin && current.pathname === target.pathname
+        } catch { return false }
+    })
+    if (existing) {
+        await existing.bringToFront()
+        return
+    }
+    const page = await context.newPage()
+    try {
+        await page.goto(managementUrl, { waitUntil: "commit", timeout: 60_000 })
+        await page.bringToFront()
+    } catch (error) {
+        await page.close().catch(() => {})
+        throw error
+    }
+}
+
 export function registerVisibleBrowserRoutes(app: FastifyInstance) {
     const sessionTimer = setInterval(() => {
         if (sessionPersistencePaused || savingSession || opening.has("sizeTemplate")) return
@@ -191,6 +214,29 @@ export function registerVisibleBrowserRoutes(app: FastifyInstance) {
     sessionTimer.unref()
     app.addHook("onClose", async () => { clearInterval(sessionTimer) })
     app.addHook("onClose", closeOwnedBrowsers)
+    app.post("/automation-browsers/sizeTemplate/open-management", async (request, reply) => {
+        reply.header("Cache-Control", "no-store")
+        if (request.body !== undefined || Object.keys(request.query as object).length)
+            return reply.code(400).send({ error: { message: "请求参数无效" } })
+        if (opening.has("sizeTemplate")) return reply.code(409).send({ error: { message: "妙手浏览器正在操作" } })
+        opening.add("sizeTemplate")
+        try {
+            assertLocalCdp("sizeTemplate")
+            if (browserMode("sizeTemplate") !== "visible") throw new Error("请先启动妙手可见浏览器")
+            const browser = await chromium.connectOverCDP("http://127.0.0.1:9223", { timeout: 3000 })
+            try {
+                if ((await readMiaoshouSession(browser)).state !== "logged_in")
+                    throw new Error("妙手登录状态未确认，请完成登录后重试")
+                const context = browser.contexts()[0]
+                if (!context) throw new Error("妙手浏览器页面不可用")
+                await setWindowVisibility("sizeTemplate", "open")
+                await openSizeTemplateManagementPage(context)
+            } finally { await browser.close() }
+            return { message: "尺码管理页已打开" }
+        } catch (error) {
+            return reply.code(409).send({ error: { message: error instanceof Error ? error.message : "尺码管理页打开失败" } })
+        } finally { opening.delete("sizeTemplate") }
+    })
     for (const action of ["open-visible", "start-headless", "minimize"] as const) app.post<{ Params: { kind: BrowserKind } }>(`/automation-browsers/:kind/${action}`, async (request, reply) => {
         reply.header("Cache-Control", "no-store")
         const kind = request.params.kind

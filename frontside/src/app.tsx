@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Alert, Button, Input, Tag } from "antd"
-import { Cpu, Edit2, LogOut, Play, RefreshCw } from "react-feather"
+import { Cpu, Edit2, ExternalLink, LogOut, Play, RefreshCw } from "react-feather"
 
 type BrowserState = "running" | "stopped" | "unknown"
 type BrowserKind = "sizeTemplate" | "shared"
@@ -41,6 +41,7 @@ export function App() {
     const [error, setError] = useState("")
     const [revision, setRevision] = useState(0)
     const [opening, setOpening] = useState<BrowserKind | null>(null)
+    const [managementBusy, setManagementBusy] = useState(false)
     const [actionError, setActionError] = useState("")
     const [connection, setConnection] = useState<ConnectionStatus | null>(null)
     const [connectionError, setConnectionError] = useState("")
@@ -172,6 +173,15 @@ export function App() {
         } catch (cause) { setActionError(cause instanceof Error ? cause.message : "浏览器窗口打开失败") }
         finally { setOpening(null) }
     }
+    const openManagement = async () => {
+        setManagementBusy(true)
+        setActionError("")
+        try {
+            await postLogin("/automation-browsers/sizeTemplate/open-management")
+            setRevision(value => value + 1)
+        } catch (cause) { setActionError(cause instanceof Error ? cause.message : "尺码管理页打开失败") }
+        finally { setManagementBusy(false) }
+    }
     const browserHeading = (kind: BrowserKind, name: string) => {
         const mode = status?.modes[kind]
         return <div className="browser-panel-heading">
@@ -238,7 +248,10 @@ export function App() {
                     : miaoshouLogin?.phase === "unknown" ? "妙手登录状态待确认" : "请在妙手浏览器窗口登录"}</span>
             </div>
             {miaoshouLogin?.phase === "logged_in" && <div className="login-actions">
-                <Button icon={<LogOut size={15} />} loading={loginBusy} disabled={loginBusy}
+                <Button icon={<ExternalLink size={15} />} loading={managementBusy}
+                    disabled={managementBusy || loginBusy || opening !== null || status?.modes.sizeTemplate !== "visible"}
+                    onClick={() => void openManagement()}>打开尺码管理页</Button>
+                <Button icon={<LogOut size={15} />} loading={loginBusy} disabled={loginBusy || managementBusy}
                     onClick={() => void loginAction(async () => {
                         setMiaoshouLogin(await postLogin("/miaoshou-login/logout") as MiaoshouLogin)
                         setRevision(value => value + 1)
