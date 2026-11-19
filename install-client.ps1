@@ -28,9 +28,9 @@ if (-not $distribution) {
     exit 2
 }
 
-& wsl.exe -d $distribution --exec systemctl cat miaoshou-client-backend.service *> $null
+& wsl.exe -d $distribution --exec test -f /etc/systemd/system/miaoshou-client-backend.service
 $backendInstalled = $LASTEXITCODE -eq 0
-& wsl.exe -d $distribution --exec systemctl cat miaoshou-client-web.service *> $null
+& wsl.exe -d $distribution --exec test -f /etc/systemd/system/miaoshou-client-web.service
 $webInstalled = $LASTEXITCODE -eq 0
 
 if ($backendInstalled -and $webInstalled) {

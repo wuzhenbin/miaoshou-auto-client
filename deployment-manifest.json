@@ -27,8 +27,8 @@
     },
     {
       "path": "install-client.ps1",
-      "size": 4427,
-      "sha256": "125d525ab06fa85e136fb6bab93e19a331fbc640b49382f705e0a081d9c6c5e4",
+      "size": 4437,
+      "sha256": "d3e41e9e09f005e76b12dda5fe79b6ccebf17ed8e3420edef43ed95ef77b8e3d",
       "obfuscated": false
     },
     {
