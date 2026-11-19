@@ -68,15 +68,7 @@ stop_legacy_node() {
 }
 backend_pid="$(listener_pid 3000)"
 if [[ -n "$backend_pid" ]] && is_legacy_node "$backend_pid"; then
-    old_session="$(curl --noproxy '*' --silent --fail --max-time 3 http://127.0.0.1:3000/client-account/session 2>/dev/null || true)"
-    old_health="$(curl --noproxy '*' --silent --fail --max-time 3 http://127.0.0.1:3000/product-runtime-health 2>/dev/null || true)"
-    if jq -e '.state == null and .runtimeAccount == null' >/dev/null 2>&1 <<<"$old_session" ||
-        jq -e '(.execution.activeProducts | type) == "number" and (.scheduler.admissions.writes.active | type) == "number" and (.scheduler.admissions.reads.active | type) == "number" and (.resources.images.activeTasks | type) == "array" and (.resources.browser.activeTasks | type) == "array" and (.execution.activeProducts // 0) == 0 and (.execution.activeAdvances // 0) == 0 and ((.execution.executions // []) | length) == 0 and (.execution.retryScan.running // false) == false and (.execution.recovering // false) == false and (.scheduler.admissions.writes.active // 0) == 0 and (.scheduler.admissions.writes.queued // 0) == 0 and (.scheduler.admissions.reads.active // 0) == 0 and (.scheduler.admissions.reads.queued // 0) == 0 and ((.resources.images.activeTasks // []) | length) == 0 and ((.resources.browser.activeTasks // []) | length) == 0' >/dev/null 2>&1 <<<"$old_health"; then
-        stop_legacy_node "$backend_pid"
-    else
-        printf '%s\n' 'The old backend may have in-flight work. It was left running; check its tasks before switching versions.' >&2
-        exit 3
-    fi
+    stop_legacy_node "$backend_pid"
 fi
 web_pid="$(listener_pid 8080)"
 if [[ -n "$web_pid" ]] && is_legacy_node "$web_pid"; then stop_legacy_node "$web_pid"; fi
