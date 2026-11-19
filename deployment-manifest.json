@@ -27,14 +27,14 @@
     },
     {
       "path": "install-client.ps1",
-      "size": 4028,
-      "sha256": "48f9d07813a664b234f74fd89d38d422158034ffbb9b83133c93f1a55b195c58",
+      "size": 4427,
+      "sha256": "125d525ab06fa85e136fb6bab93e19a331fbc640b49382f705e0a081d9c6c5e4",
       "obfuscated": false
     },
     {
       "path": "install-client.sh",
-      "size": 6022,
-      "sha256": "ec710bfebf75b88937034bdb9bcdbf68ea143be376a6016aa624c099f990d485",
+      "size": 6206,
+      "sha256": "1d0692b9035d2220007200210df996caaa1a0dbf1da7ca0c860253898b4dfaec",
       "obfuscated": false
     },
     {
@@ -1155,8 +1155,8 @@
     },
     {
       "path": "backend/dist/services/size-execution-context.js",
-      "size": 6825,
-      "sha256": "4a95dfc34ebaed6ffd831aaaee15664cfb85030baafdd32cea3e45d36b8be42b",
+      "size": 7186,
+      "sha256": "228ef7f221ae476be9ccef38e1d9dcf1dec4210830ee1267c667f44586a36721",
       "obfuscated": true
     },
     {

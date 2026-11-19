@@ -61,6 +61,7 @@ if ($backendInstalled -and $webInstalled) {
 }
 
 $url = 'http://127.0.0.1:8080/workbench'
+$apiUrl = 'http://127.0.0.1:8080/auth/session'
 $ready = $false
 for ($attempt = 0; $attempt -lt 30; $attempt++) {
     try {
@@ -69,14 +70,21 @@ for ($attempt = 0; $attempt -lt 30; $attempt++) {
         $request.Timeout = 3000
         $response = $request.GetResponse()
         try { $ready = [int]$response.StatusCode -eq 200 } finally { $response.Close() }
-        if ($ready) { break }
+        if ($ready) {
+            $apiRequest = [System.Net.HttpWebRequest]::Create($apiUrl)
+            $apiRequest.Proxy = $null
+            $apiRequest.Timeout = 3000
+            $apiResponse = $apiRequest.GetResponse()
+            try { $ready = [int]$apiResponse.StatusCode -eq 200 } finally { $apiResponse.Close() }
+            if ($ready) { break }
+        }
     } catch { Start-Sleep -Seconds 1 }
 }
 if ($ready) {
     Start-Process $url
     Write-Host "Client ready: $url"
 } else {
-    Write-Warning "The client is running in WSL2, but Windows cannot reach $url. Check WSL2 localhost forwarding."
+    Write-Warning "The client page or backend API is unavailable at $url. Check the WSL2 service status and localhost forwarding."
 }
 Write-Host 'Keep this window open while using the client.'
 & wsl.exe -d $distribution --exec /bin/sleep infinity

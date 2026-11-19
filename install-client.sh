@@ -29,7 +29,8 @@ if sudo test -e "$backend_unit"; then
     fi
     if sudo systemctl is-active --quiet miaoshou-client-backend.service &&
         sudo systemctl is-active --quiet miaoshou-client-web.service &&
-        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/workbench >/dev/null; then
+        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/workbench >/dev/null &&
+        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/auth/session >/dev/null; then
         printf '%s\n' 'The installed client is already running at http://127.0.0.1:8080/workbench'
         exit 0
     fi
@@ -94,6 +95,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now miaoshou-client-backend.service miaoshou-client-web.service
 for attempt in $(seq 1 30); do
     if curl --noproxy '*' --silent --fail http://127.0.0.1:8080/workbench >/dev/null &&
+        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/auth/session >/dev/null &&
         sudo systemctl is-active --quiet miaoshou-client-backend.service; then
         printf '%s\n' 'Miaoshou client is running at http://127.0.0.1:8080/workbench'
         exit 0
