@@ -36,8 +36,15 @@ if sudo test -e "$backend_unit"; then
     fi
 fi
 sudo -v
-sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl gnupg git jq openssl postgresql postgresql-contrib
+package_installed() { dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -qx 'install ok installed'; }
+missing_packages=()
+for package in ca-certificates curl gnupg git jq openssl postgresql postgresql-contrib; do
+    if ! package_installed "$package"; then missing_packages+=("$package"); fi
+done
+if (( ${#missing_packages[@]} )); then
+    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing_packages[@]}"
+fi
 
 if ! command -v node >/dev/null || ! node -e 'const [major,minor]=process.versions.node.split(".").map(Number); process.exit(major>22||major===22&&minor>=19?0:1)' >/dev/null; then
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/nodesource.gpg
@@ -58,14 +65,21 @@ if ! apt-cache show "$pgvector_package" >/dev/null 2>&1; then
         sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
     sudo apt-get update
 fi
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$pgvector_package"
+if ! package_installed "$pgvector_package"; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$pgvector_package"
+fi
 sudo -u postgres psql -Atqc "SELECT default_version FROM pg_available_extensions WHERE name='vector'" | grep -q .
 
 node "$source_dir/install-client.mjs" prepare "$source_dir" "$release"
 cd "$release/backend"
-npm ci --omit=dev --no-audit --no-fund
-sudo env PATH="$PATH" ./node_modules/.bin/playwright install-deps chromium
+if [[ ! -d node_modules ]] || ! npm ls --omit=dev --depth=0 >/dev/null 2>&1; then
+    npm ci --omit=dev --no-audit --no-fund
+fi
 ./node_modules/.bin/playwright install chromium
+if ! node --input-type=module -e 'import { chromium } from "playwright"; const browser = await chromium.launch({headless:true}); await browser.close()' >/dev/null 2>&1; then
+    sudo env PATH="$PATH" ./node_modules/.bin/playwright install-deps chromium
+    node --input-type=module -e 'import { chromium } from "playwright"; const browser = await chromium.launch({headless:true}); await browser.close()'
+fi
 node --input-type=module -e 'import sharp from "sharp"; import { chromium } from "playwright"; await sharp({create:{width:1,height:1,channels:3,background:"white"}}).png().toBuffer(); if (!chromium.executablePath()) process.exit(1)'
 
 config="$HOME/.config/miaoshou-auto/client.env"

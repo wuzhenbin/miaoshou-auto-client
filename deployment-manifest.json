@@ -33,8 +33,8 @@
     },
     {
       "path": "install-client.sh",
-      "size": 6206,
-      "sha256": "1d0692b9035d2220007200210df996caaa1a0dbf1da7ca0c860253898b4dfaec",
+      "size": 6986,
+      "sha256": "0a044b7f3dae54c5e84e17ac53879c35a20cd51ca65c89937b5149a108df19b9",
       "obfuscated": false
     },
     {
