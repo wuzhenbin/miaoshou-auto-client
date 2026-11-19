@@ -28,66 +28,50 @@ if (-not $distribution) {
     exit 2
 }
 
-& wsl.exe -d $distribution --exec test -f /etc/systemd/system/miaoshou-client-backend.service
-$backendInstalled = $LASTEXITCODE -eq 0
-& wsl.exe -d $distribution --exec test -f /etc/systemd/system/miaoshou-client-web.service
-$webInstalled = $LASTEXITCODE -eq 0
-
-if ($backendInstalled -and $webInstalled) {
-    & wsl.exe -d $distribution --exec systemctl is-active --quiet miaoshou-client-backend.service
-    $backendActive = $LASTEXITCODE -eq 0
-    & wsl.exe -d $distribution --exec systemctl is-active --quiet miaoshou-client-web.service
-    $webActive = $LASTEXITCODE -eq 0
-    if (-not ($backendActive -and $webActive)) {
-        & wsl.exe -d $distribution --exec sudo systemctl start miaoshou-client-backend.service miaoshou-client-web.service
-        if ($LASTEXITCODE -ne 0) { throw 'Cannot start the installed client services in WSL2.' }
-    }
-} else {
-    $linuxSource = (& wsl.exe -d $distribution --exec wslpath -u $PSScriptRoot | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or -not $linuxSource) { throw 'Cannot locate the release files in WSL2.' }
-    & wsl.exe -d $distribution --exec test -f "$linuxSource/deployment-manifest.json"
-    if ($LASTEXITCODE -ne 0) { throw 'The release files are not accessible from WSL2.' }
-    & wsl.exe -d $distribution --exec bash "$linuxSource/install-client.sh" "$linuxSource"
-    if ($LASTEXITCODE -ne 0) { throw 'Client installation in WSL2 failed. See the messages above.' }
-
-    $taskName = 'Miaoshou Client WSL'
-    if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
-        $action = New-ScheduledTaskAction -Execute "$env:WINDIR\System32\wsl.exe" -Argument "-d `"$distribution`" --exec /bin/sleep infinity"
-        $trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
-        $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
-        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal | Out-Null
-    }
-    Start-ScheduledTask -TaskName $taskName
+$linuxSource = (& wsl.exe -d $distribution --exec wslpath -u $PSScriptRoot | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $linuxSource) { throw 'Cannot locate the release files in WSL2.' }
+& wsl.exe -d $distribution --exec test -f "$linuxSource/deployment-manifest.json"
+if ($LASTEXITCODE -ne 0) { throw 'The release files are not accessible from WSL2.' }
+& wsl.exe -d $distribution --exec bash "$linuxSource/install-client.sh" "$linuxSource"
+if ($LASTEXITCODE -ne 0) { throw 'Client installation in WSL2 failed. See the messages above.' }
+$taskName = 'Miaoshou Client WSL'
+if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 }
 
 $url = 'http://127.0.0.1:8080/'
 $apiUrl = 'http://127.0.0.1:8080/auth/session'
-$ready = $false
-for ($attempt = 0; $attempt -lt 30; $attempt++) {
-    try {
-        $request = [System.Net.HttpWebRequest]::Create($url)
-        $request.Proxy = $null
-        $request.Timeout = 3000
-        $response = $request.GetResponse()
-        try { $ready = [int]$response.StatusCode -eq 200 } finally { $response.Close() }
-        if ($ready) {
-            $apiRequest = [System.Net.HttpWebRequest]::Create($apiUrl)
-            $apiRequest.Proxy = $null
-            $apiRequest.Timeout = 3000
-            $apiResponse = $apiRequest.GetResponse()
-            try { $ready = [int]$apiResponse.StatusCode -eq 200 } finally { $apiResponse.Close() }
-            if ($ready) { break }
-        }
-    } catch { Start-Sleep -Seconds 1 }
-}
-if ($ready) {
+$arguments = '-d "{0}" --exec bash "{1}/run-client.sh" "{1}"' -f $distribution, $linuxSource
+$runner = Start-Process -FilePath wsl.exe -ArgumentList $arguments -NoNewWindow -PassThru
+try {
+    $ready = $false
+    for ($attempt = 0; $attempt -lt 30; $attempt++) {
+        if ($runner.HasExited) { throw 'Client stopped during startup. See the messages above.' }
+        try {
+            $request = [System.Net.HttpWebRequest]::Create($url)
+            $request.Proxy = $null
+            $request.Timeout = 3000
+            $response = $request.GetResponse()
+            try { $ready = [int]$response.StatusCode -eq 200 } finally { $response.Close() }
+            if ($ready) {
+                $apiRequest = [System.Net.HttpWebRequest]::Create($apiUrl)
+                $apiRequest.Proxy = $null
+                $apiRequest.Timeout = 3000
+                $apiResponse = $apiRequest.GetResponse()
+                try { $ready = [int]$apiResponse.StatusCode -eq 200 } finally { $apiResponse.Close() }
+                if ($ready) { break }
+            }
+        } catch { $ready = $false }
+        Start-Sleep -Seconds 1
+    }
+    if (-not $ready) { throw 'Client page or backend API did not become ready. See the messages above.' }
     Start-Process $url
     Write-Host "Client ready: $url"
-} else {
-    Write-Warning "The client page or backend API is unavailable at $url. Check the WSL2 service status and localhost forwarding."
-}
-Write-Host 'Keep this window open while using the client.'
-& wsl.exe -d $distribution --exec /bin/sleep infinity
-if ($LASTEXITCODE -ne 0) {
-    throw 'The WSL2 keepalive process stopped; run run-client.cmd to restart the client.'
+    Write-Host 'Keep this window open while using the client.'
+    $runner.WaitForExit()
+    throw 'The client stopped. Run run-client.cmd to restart it.'
+} finally {
+    if (-not $runner.HasExited) {
+        Stop-Process -Id $runner.Id -ErrorAction SilentlyContinue
+    }
 }
