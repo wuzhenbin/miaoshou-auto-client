@@ -27,14 +27,14 @@
     },
     {
       "path": "install-client.ps1",
-      "size": 4437,
-      "sha256": "d3e41e9e09f005e76b12dda5fe79b6ccebf17ed8e3420edef43ed95ef77b8e3d",
+      "size": 4428,
+      "sha256": "59ea3cf901c8a9c1813e26b3005b63097911bbb81590da78058cc31c007bc9eb",
       "obfuscated": false
     },
     {
       "path": "install-client.sh",
-      "size": 6986,
-      "sha256": "0a044b7f3dae54c5e84e17ac53879c35a20cd51ca65c89937b5149a108df19b9",
+      "size": 6950,
+      "sha256": "c6d5f893b04c37cf2826aa6bcf7bd0ab145b8a375e095b04bf4bd14e605a2ee5",
       "obfuscated": false
     },
     {
@@ -51,14 +51,14 @@
     },
     {
       "path": "install-client-mac.sh",
-      "size": 5447,
-      "sha256": "5d6a0e422cc8af47ecbc96ad0bcb40774453ed4526b25eae19e09006d16d518d",
+      "size": 5402,
+      "sha256": "00bc93cca9a8b4c0e48fd3f6335ad499bd43ed4f1f9ef305a5b042e54f7bcbba",
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-CJJ89ahh.js",
+      "path": "frontside/assets/index-BOBR6MW2.js",
       "size": 1486690,
-      "sha256": "5de8b6d12fd68b7e4eb7d80b529f81eb86ce840bfe8711779e633b76832489d7",
+      "sha256": "1c5ac823b670c3c9732533f24fb5f3d7df42eb5036fb3ebc4139826ba24d7057",
       "obfuscated": false
     },
     {
@@ -82,7 +82,7 @@
     {
       "path": "frontside/index.html",
       "size": 471,
-      "sha256": "3a5cea04d67c26cf2f77af8e35ebd71e450934761db654f31f5c36ecf668bd34",
+      "sha256": "9fccb07d34c3fbfadfda8f2be58b116400f84ed257b475531553e500a2ffe3f9",
       "obfuscated": false
     },
     {

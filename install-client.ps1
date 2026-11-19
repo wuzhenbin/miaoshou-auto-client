@@ -60,7 +60,7 @@ if ($backendInstalled -and $webInstalled) {
     Start-ScheduledTask -TaskName $taskName
 }
 
-$url = 'http://127.0.0.1:8080/workbench'
+$url = 'http://127.0.0.1:8080/'
 $apiUrl = 'http://127.0.0.1:8080/auth/session'
 $ready = $false
 for ($attempt = 0; $attempt -lt 30; $attempt++) {

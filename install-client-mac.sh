@@ -39,8 +39,8 @@ if [[ -e "$backend_plist" ]]; then
     fi
     if launchctl print "gui/$(id -u)/com.miaoshou.client.backend" >/dev/null 2>&1 &&
         launchctl print "gui/$(id -u)/com.miaoshou.client.web" >/dev/null 2>&1 &&
-        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/workbench >/dev/null; then
-        open http://127.0.0.1:8080/workbench
+        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/ >/dev/null; then
+        open http://127.0.0.1:8080/
         exit 0
     fi
 fi
@@ -93,9 +93,9 @@ for label in com.miaoshou.client.backend com.miaoshou.client.web; do
     fi
 done
 for attempt in $(seq 1 30); do
-    if curl --noproxy '*' --silent --fail http://127.0.0.1:8080/workbench >/dev/null; then
-        open http://127.0.0.1:8080/workbench
-        printf '%s\n' 'Miaoshou client is running at http://127.0.0.1:8080/workbench'
+    if curl --noproxy '*' --silent --fail http://127.0.0.1:8080/ >/dev/null; then
+        open http://127.0.0.1:8080/
+        printf '%s\n' 'Miaoshou client is running at http://127.0.0.1:8080/'
         exit 0
     fi
     sleep 1
