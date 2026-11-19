@@ -18,6 +18,22 @@ if [[ ! -f "$source_dir/deployment-manifest.json" ]]; then
     printf '%s\n' 'Release manifest is missing.' >&2
     exit 2
 fi
+manifest_hash="$(sha256sum "$source_dir/deployment-manifest.json" | cut -c1-16)"
+release="$HOME/.local/share/miaoshou-auto/releases/$manifest_hash"
+backend_unit=/etc/systemd/system/miaoshou-client-backend.service
+web_unit=/etc/systemd/system/miaoshou-client-web.service
+if sudo test -e "$backend_unit"; then
+    if ! sudo grep -Fq "$release/backend/dist/server.js" "$backend_unit"; then
+        printf '%s\n' 'Another client version is installed. Use the safe update workflow.' >&2
+        exit 3
+    fi
+    if sudo systemctl is-active --quiet miaoshou-client-backend.service &&
+        sudo systemctl is-active --quiet miaoshou-client-web.service &&
+        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/workbench >/dev/null; then
+        printf '%s\n' 'The installed client is already running at http://127.0.0.1:8080/workbench'
+        exit 0
+    fi
+fi
 sudo -v
 sudo apt-get update
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl gnupg git jq openssl postgresql postgresql-contrib
@@ -44,22 +60,6 @@ fi
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$pgvector_package"
 sudo -u postgres psql -Atqc "SELECT default_version FROM pg_available_extensions WHERE name='vector'" | grep -q .
 
-manifest_hash="$(sha256sum "$source_dir/deployment-manifest.json" | cut -c1-16)"
-release="$HOME/.local/share/miaoshou-auto/releases/$manifest_hash"
-backend_unit=/etc/systemd/system/miaoshou-client-backend.service
-web_unit=/etc/systemd/system/miaoshou-client-web.service
-if sudo test -e "$backend_unit"; then
-    if ! sudo grep -Fq "$release/backend/dist/server.js" "$backend_unit"; then
-        printf '%s\n' 'Another client version is installed. Use the safe update workflow.' >&2
-        exit 3
-    fi
-    if sudo systemctl is-active --quiet miaoshou-client-backend.service &&
-        sudo systemctl is-active --quiet miaoshou-client-web.service &&
-        curl --noproxy '*' --silent --fail http://127.0.0.1:8080/workbench >/dev/null; then
-        printf '%s\n' 'The installed client is already running at http://127.0.0.1:8080/workbench'
-        exit 0
-    fi
-fi
 node "$source_dir/install-client.mjs" prepare "$source_dir" "$release"
 cd "$release/backend"
 npm ci --omit=dev --no-audit --no-fund

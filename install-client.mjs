@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path"
 const hash = data => createHash("sha256").update(data).digest("hex")
 const required = ["CLIENT_LOGIN_TOKEN", "SERVER_MODEL_READ_TOKEN", "SERVER_MODEL_DATA_KEY",
     "OSS_BUCKET", "OSS_REGION", "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET"]
-const runtimeFiles = new Set(["package.json", "README.md", "install-client.cmd", "install-client.ps1",
+const runtimeFiles = new Set(["package.json", "README.md", "run-client.cmd", "install-client.cmd", "install-client.ps1",
     "install-client.sh", "install-client.mjs", "install-client.command", "install-client-mac.sh",
     "backend/package.json", "backend/package-lock.json", "backend/README.md", "backend/.env.example",
     "backend/config/product-editor.jsonc", "backend/config/category-index.json",

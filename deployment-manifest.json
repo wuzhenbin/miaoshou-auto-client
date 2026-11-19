@@ -9,8 +9,14 @@
     },
     {
       "path": "README.md",
-      "size": 1057,
-      "sha256": "ee05bf530872f5779a905c67d0cb55e02b13543784a149480ab8c9ce1ba84d7f",
+      "size": 1122,
+      "sha256": "0f76f820677153d06b1e5a2821481252aeb5c92934646facde5b5aacb0bbf54c",
+      "obfuscated": false
+    },
+    {
+      "path": "run-client.cmd",
+      "size": 123,
+      "sha256": "ea7491a586c660f84f3abadbf167305e66a54fe2eca5cc0278d718fe944dba74",
       "obfuscated": false
     },
     {
@@ -21,20 +27,20 @@
     },
     {
       "path": "install-client.ps1",
-      "size": 2657,
-      "sha256": "390d34774a695a1cc918ff0add4b5b8c53f54d4e324a8e02b04702737b2d6639",
+      "size": 4393,
+      "sha256": "bf3d61e7cc5ea25f87b78fab6f7efeec1ceba1a0636c66190a90be2be26a23a5",
       "obfuscated": false
     },
     {
       "path": "install-client.sh",
       "size": 6022,
-      "sha256": "60b2336b7f5b05783e8c2d4c0539b6bb8f8926079c55e6c6c4527067b4f174e8",
+      "sha256": "ec710bfebf75b88937034bdb9bcdbf68ea143be376a6016aa624c099f990d485",
       "obfuscated": false
     },
     {
       "path": "install-client.mjs",
-      "size": 7000,
-      "sha256": "e2d18e1c5863a28749dcd3d9a1e5d42e0d73fadf2e9aa47db270ede19179f03f",
+      "size": 7018,
+      "sha256": "562b5daf4db80a6d4eb31914d8b907b33398155f0ca103c462df6cf30243cc6c",
       "obfuscated": false
     },
     {
