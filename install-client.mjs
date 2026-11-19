@@ -9,7 +9,7 @@ const defaultServerUrl = "https://103.112.1.161/"
 const required = ["CLIENT_LOGIN_TOKEN", "SERVER_MODEL_READ_TOKEN", "SERVER_MODEL_DATA_KEY",
     "OSS_BUCKET", "OSS_REGION", "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET"]
 const runtimeFiles = new Set(["package.json", "README.md", "run-client.cmd", "run-client.sh", "install-client.cmd", "install-client.ps1",
-    "install-client.sh", "install-client.mjs", "install-client.command", "install-client-mac.sh",
+    "install-client.sh", "install-client-user.sh", "install-client.mjs", "install-client.command", "install-client-mac.sh",
     "backend/package.json", "backend/package-lock.json", "backend/README.md", "backend/.env.example",
     "backend/config/product-editor.jsonc", "backend/config/category-index.json",
     ...["browser-process", "browser-close", "browser-open", "size-template-browser-smoke",

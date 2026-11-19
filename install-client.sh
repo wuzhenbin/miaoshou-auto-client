@@ -1,101 +1,95 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source_dir="${1:-$(cd -- "$(dirname -- "$0")" && pwd)}"
-if [[ "$(uname -r)" != *WSL2* ]] || [[ "$(. /etc/os-release; printf '%s' "$ID")" != ubuntu ]]; then
-    printf '%s\n' 'This installer requires Ubuntu on WSL2.' >&2
+source_dir="$1"
+client_user="$2"
+node_path="${3:-}"
+if [[ "$(id -u)" != 0 ]] || [[ "$(uname -r)" != *WSL2* ]] || [[ "$(. /etc/os-release; printf '%s' "$ID")" != ubuntu ]]; then
+    printf '%s\n' 'This installer requires root in Ubuntu on WSL2.' >&2
     exit 2
 fi
-if [[ "$(id -u)" == 0 ]]; then
-    printf '%s\n' 'Run this installer as the normal WSL user.' >&2
+if [[ ! -f "$source_dir/deployment-manifest.json" ]] || [[ "$client_user" == root ]]; then
+    printf '%s\n' 'Release files or the normal WSL user are missing.' >&2
     exit 2
 fi
-if [[ ! -f "$source_dir/deployment-manifest.json" ]]; then
-    printf '%s\n' 'Release manifest is missing.' >&2
+client_home="$(getent passwd "$client_user" | cut -d: -f6)"
+if [[ -z "$client_home" || ! -d "$client_home" ]]; then
+    printf '%s\n' 'The normal WSL user has no home directory.' >&2
     exit 2
 fi
 manifest_hash="$(sha256sum "$source_dir/deployment-manifest.json" | cut -c1-16)"
-release="$HOME/.local/share/miaoshou-auto/releases/$manifest_hash"
-config="$HOME/.config/miaoshou-auto/client.env"
-if [[ -f "$release/.install-complete" && -f "$config" ]]; then
-    exit 0
-fi
-backend_unit=/etc/systemd/system/miaoshou-client-backend.service
-web_unit=/etc/systemd/system/miaoshou-client-web.service
+release="$client_home/.local/share/miaoshou-auto/releases/$manifest_hash"
+config="$client_home/.config/miaoshou-auto/client.env"
 package_installed() { dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -qx 'install ok installed'; }
-missing_packages=()
-for package in ca-certificates curl gnupg git jq openssl postgresql; do
-    if ! package_installed "$package"; then missing_packages+=("$package"); fi
-done
-if (( ${#missing_packages[@]} )); then
-    sudo apt-get update
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing_packages[@]}"
+if [[ ! -f "$release/.install-complete" || ! -f "$config" ]]; then
+    missing_packages=()
+    for package in ca-certificates curl gnupg git jq openssl postgresql; do
+        if ! package_installed "$package"; then missing_packages+=("$package"); fi
+    done
+    if (( ${#missing_packages[@]} )); then
+        apt-get update
+        DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing_packages[@]}"
+    fi
+    if [[ ! -x "$node_path" ]] || ! runuser -u "$client_user" -- "$node_path" -e 'const [major,minor]=process.versions.node.split(".").map(Number); process.exit(major>22||major===22&&minor>=19?0:1)'; then
+        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --batch --yes --dearmor -o /usr/share/keyrings/nodesource.gpg
+        printf '%s\n' 'deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main' > /etc/apt/sources.list.d/nodesource.list
+        apt-get update
+        DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+        node_path=/usr/bin/node
+    fi
 fi
-
-if ! command -v node >/dev/null || ! node -e 'const [major,minor]=process.versions.node.split(".").map(Number); process.exit(major>22||major===22&&minor>=19?0:1)' >/dev/null; then
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/nodesource.gpg
-    printf '%s\n' 'deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main' |
-        sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
-    sudo apt-get update
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
-fi
-node -e 'const [major,minor]=process.versions.node.split(".").map(Number); process.exit(major>22||major===22&&minor>=19?0:1)'
-
 pg_major="$(pg_lsclusters --no-header | awk '$2 == "main" { print $1; exit }')"
 if [[ -z "$pg_major" ]]; then
     printf '%s\n' 'PostgreSQL main cluster is missing.' >&2
     exit 2
 fi
-if ! pg_isready -q; then
-    sudo pg_ctlcluster --skip-systemctl-redirect "$pg_major" main start
+if ! pg_isready -q; then pg_ctlcluster --skip-systemctl-redirect "$pg_major" main start; fi
+if [[ -f "$release/.install-complete" && -f "$config" ]]; then exit 0; fi
+
+if [[ ! -x "$node_path" ]]; then
+    printf '%s\n' 'Node.js is unavailable for the normal WSL user.' >&2
+    exit 2
 fi
-pg_major="$(sudo -u postgres psql -Atqc 'SHOW server_version' | cut -d. -f1)"
+export PATH="$(dirname "$node_path"):$PATH"
+pg_major="$(runuser -u postgres -- psql -Atqc 'SHOW server_version' | cut -d. -f1)"
 pgvector_package="postgresql-${pg_major}-pgvector"
 if ! apt-cache show "$pgvector_package" >/dev/null 2>&1; then
-    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/postgresql.gpg
+    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --batch --yes --dearmor -o /usr/share/keyrings/postgresql.gpg
     codename="$(. /etc/os-release; printf '%s' "$VERSION_CODENAME")"
-    printf 'deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$codename" |
-        sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
-    sudo apt-get update
+    printf 'deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$codename" > /etc/apt/sources.list.d/pgdg.list
+    apt-get update
 fi
-if ! package_installed "$pgvector_package"; then
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$pgvector_package"
-fi
-sudo -u postgres psql -Atqc "SELECT default_version FROM pg_available_extensions WHERE name='vector'" | grep -q .
+if ! package_installed "$pgvector_package"; then DEBIAN_FRONTEND=noninteractive apt-get install -y "$pgvector_package"; fi
+runuser -u postgres -- psql -Atqc "SELECT default_version FROM pg_available_extensions WHERE name='vector'" | grep -q .
 
-node "$source_dir/install-client.mjs" prepare "$source_dir" "$release"
-cd "$release/backend"
-if [[ ! -d node_modules ]] || ! npm ls --omit=dev --depth=0 >/dev/null 2>&1; then
-    npm ci --omit=dev --no-audit --no-fund
+run_user_install() {
+    runuser -u "$client_user" -- env HOME="$client_home" PATH="$PATH" bash "$source_dir/install-client-user.sh" "$source_dir" "$release" "$config"
+}
+if run_user_install; then :
+else
+    result=$?
+    if [[ "$result" != 42 ]]; then exit "$result"; fi
+    cd "$release/backend"
+    ./node_modules/.bin/playwright install-deps chromium
+    run_user_install
 fi
-./node_modules/.bin/playwright install chromium
-if ! node --input-type=module -e 'import { chromium } from "playwright"; const browser = await chromium.launch({headless:true}); await browser.close()' >/dev/null 2>&1; then
-    sudo env PATH="$PATH" ./node_modules/.bin/playwright install-deps chromium
-    node --input-type=module -e 'import { chromium } from "playwright"; const browser = await chromium.launch({headless:true}); await browser.close()'
-fi
-node --input-type=module -e 'import sharp from "sharp"; import { chromium } from "playwright"; await sharp({create:{width:1,height:1,channels:3,background:"white"}}).png().toBuffer(); if (!chromium.executablePath()) process.exit(1)'
-
-node "$release/install-client.mjs" configure "$config"
-db_password="$(node "$release/install-client.mjs" db-password "$config")"
-role_exists="$(sudo -u postgres psql -Atqc "SELECT 1 FROM pg_roles WHERE rolname='miaoshou_client'")"
+db_password="$(runuser -u "$client_user" -- "$node_path" "$release/install-client.mjs" db-password "$config")"
+role_exists="$(runuser -u postgres -- psql -Atqc "SELECT 1 FROM pg_roles WHERE rolname='miaoshou_client'")"
 if [[ -z "$role_exists" ]]; then
-    sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE miaoshou_client LOGIN SUPERUSER CREATEDB PASSWORD '$db_password'" >/dev/null
+    runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "CREATE ROLE miaoshou_client LOGIN SUPERUSER CREATEDB PASSWORD '$db_password'" >/dev/null
 fi
-PGPASSWORD="$db_password" psql -h 127.0.0.1 -U miaoshou_client -d postgres -Atqc 'SELECT 1' | grep -qx 1
-if [[ ! -e "$release/backend/.env" ]]; then ln -s "$config" "$release/backend/.env"; fi
-if [[ "$(readlink -f "$release/backend/.env")" != "$config" ]]; then
-    printf '%s\n' 'Release configuration link points to another file.' >&2
-    exit 3
-fi
+runuser -u "$client_user" -- env PGPASSWORD="$db_password" psql -h 127.0.0.1 -U miaoshou_client -d postgres -Atqc 'SELECT 1' | grep -qx 1
 
+backend_unit=/etc/systemd/system/miaoshou-client-backend.service
+web_unit=/etc/systemd/system/miaoshou-client-web.service
 if [[ -f "$backend_unit" || -f "$web_unit" ]]; then
     if [[ "$(cat /proc/1/comm)" == systemd ]]; then
         for unit in miaoshou-client-backend.service miaoshou-client-web.service; do
-            if [[ -f "/etc/systemd/system/$unit" ]]; then sudo systemctl disable --now "$unit"; fi
+            if [[ -f "/etc/systemd/system/$unit" ]]; then systemctl disable --now "$unit"; fi
         done
     fi
-    sudo rm -f "$backend_unit" "$web_unit"
-    if [[ "$(cat /proc/1/comm)" == systemd ]]; then sudo systemctl daemon-reload; fi
+    rm -f "$backend_unit" "$web_unit"
+    if [[ "$(cat /proc/1/comm)" == systemd ]]; then systemctl daemon-reload; fi
 fi
-touch "$release/.install-complete"
+runuser -u "$client_user" -- touch "$release/.install-complete"
 printf '%s\n' 'Client dependencies and private configuration are ready.'

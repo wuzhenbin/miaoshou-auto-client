@@ -10,8 +10,8 @@ if [[ ! -f "$release/.install-complete" ]]; then
 fi
 cd "$release/backend"
 if ! pg_isready -q; then
-    pg_major="$(pg_lsclusters --no-header | awk '$2 == "main" { print $1; exit }')"
-    sudo pg_ctlcluster --skip-systemctl-redirect "$pg_major" main start
+    printf '%s\n' 'PostgreSQL is unavailable. Run run-client.cmd again to start it.' >&2
+    exit 1
 fi
 listener_pid() {
     ss -H -ltnp "( sport = :$1 )" 2>/dev/null | sed -n 's/.*pid=\([0-9][0-9]*\).*/\1/p' | head -n 1
@@ -21,15 +21,18 @@ client_node() {
     executable="$(readlink "/proc/$1/exe" 2>/dev/null)" || return 1
     directory="$(readlink "/proc/$1/cwd" 2>/dev/null)" || return 1
     [[ "$executable" == */node ]] || return 1
-    case "$directory" in "$HOME"/.local/share/miaoshou-auto/releases/*/backend) return 0 ;; esac
+    case "$directory" in
+        "$HOME"/.local/share/miaoshou-auto/releases/*/backend|"$HOME"/miaoshou-auto/backend) return 0 ;;
+    esac
     return 1
 }
 web_listener="$(listener_pid 8080)"
 if [[ -n "$web_listener" ]] && client_node "$web_listener"; then
+    web_directory="$(readlink "/proc/$web_listener/cwd" 2>/dev/null || true)"
     backend_status="$(curl --noproxy '*' --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://127.0.0.1:3000/auth/session 2>/dev/null || true)"
-    if [[ "$backend_status" == 000 || -z "$backend_status" ]]; then
+    if [[ "$web_directory" == "$HOME/miaoshou-auto/backend" || "$backend_status" == 000 || -z "$backend_status" ]]; then
         kill "$web_listener"
-        printf 'Stopped a client web process without a reachable backend (PID %s).\n' "$web_listener"
+        printf 'Stopped the old client web process (PID %s).\n' "$web_listener"
         for attempt in 1 2 3 4 5; do
             if [[ -z "$(listener_pid 8080)" ]]; then break; fi
             sleep 1
