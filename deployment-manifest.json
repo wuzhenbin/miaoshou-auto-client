@@ -68,9 +68,9 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-BV4R6Mu1.js",
-      "size": 1487102,
-      "sha256": "90f897efb98646caf408fac357e3ec8352c24d013e959a6924436aaaeea86690",
+      "path": "frontside/assets/index-BcFFtwGz.js",
+      "size": 1487501,
+      "sha256": "e7fedbc20c2be50511d72393f164ec5ff4fb316e597a3c702222fb0e237f1d6d",
       "obfuscated": false
     },
     {
@@ -94,7 +94,7 @@
     {
       "path": "frontside/index.html",
       "size": 471,
-      "sha256": "e8037c598d00b2784d0f0eb654a38355d5b38f6124cda774cacc70b376b14d38",
+      "sha256": "f898d0ccee51356240b2c275c214460af9e90870f54dbd708d21db1bf7d79431",
       "obfuscated": false
     },
     {
