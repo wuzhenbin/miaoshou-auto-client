@@ -28,9 +28,11 @@ if (-not $distribution) {
     exit 2
 }
 
-$linuxSource = (& wsl.exe -d $distribution -- wslpath -u $PSScriptRoot | Out-String).Trim()
+$linuxSource = (& wsl.exe -d $distribution --exec wslpath -u $PSScriptRoot | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $linuxSource) { throw 'Cannot locate the release files in WSL2.' }
-& wsl.exe -d $distribution -- bash "$linuxSource/install-client.sh" "$linuxSource"
+& wsl.exe -d $distribution --exec test -f "$linuxSource/deployment-manifest.json"
+if ($LASTEXITCODE -ne 0) { throw 'The release files are not accessible from WSL2.' }
+& wsl.exe -d $distribution --exec bash "$linuxSource/install-client.sh" "$linuxSource"
 if ($LASTEXITCODE -ne 0) { throw 'Client installation in WSL2 failed. See the messages above.' }
 
 $taskName = 'Miaoshou Client WSL'
