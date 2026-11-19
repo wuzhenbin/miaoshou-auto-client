@@ -489,8 +489,8 @@
     },
     {
       "path": "backend/dist/services/automation-browser.js",
-      "size": 4837,
-      "sha256": "0de8d1ab95725b311c1e661b5792c6a83087549fcfbe2b6428c66a5d05aee07e",
+      "size": 4814,
+      "sha256": "c8d1106c18f7d25707db22328ffc7d4052a1bab29f5fc80c5095337653589bbd",
       "obfuscated": true
     },
     {
@@ -509,6 +509,12 @@
       "path": "backend/dist/services/background-browser-page.js",
       "size": 3095,
       "sha256": "0d1b9db6d11656b52b55af68a2bc156b5ce6c3f4001aa161400e6b6c201dd5e9",
+      "obfuscated": true
+    },
+    {
+      "path": "backend/dist/services/browser-cdp-host.js",
+      "size": 2522,
+      "sha256": "9dee3a0ac5b93fb385632905206254b83f5546a6a7d72476d4865a466005a974",
       "obfuscated": true
     },
     {
@@ -1263,8 +1269,8 @@
     },
     {
       "path": "backend/dist/services/size-template-browser-connection.js",
-      "size": 3365,
-      "sha256": "05e8e8897044b155eb3d2454cc4e47321929a25ebf25d50872f97f71db233f79",
+      "size": 3375,
+      "sha256": "d4781be4d1901b3db989aae1ff68a28dce0b036a20c68d080122f023c1e6f4a9",
       "obfuscated": true
     },
     {
@@ -2151,8 +2157,8 @@
     },
     {
       "path": "backend/poc/browser-process.mjs",
-      "size": 8060,
-      "sha256": "e5641937145e9030110cd7a6c83b202ed9a6e2a2865248915a21f032efd8d853",
+      "size": 9405,
+      "sha256": "b000ca8d2963832c82d41ffe706ca4ecf7d8a64abc79349636e0cad7e80d3a87",
       "obfuscated": true
     },
     {
