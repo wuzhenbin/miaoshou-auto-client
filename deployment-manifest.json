@@ -68,15 +68,15 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-C12oyTAf.js",
-      "size": 1489750,
-      "sha256": "5abc5514fccc697b89d0ab921eec63355e3969895192716389850c5169651188",
-      "obfuscated": false
-    },
-    {
       "path": "frontside/assets/index-CTw-hXEG.css",
       "size": 67611,
       "sha256": "3a4ba8e536a7e31dc1306e7458422104dc057e9319c426e0506e3d4323f8141a",
+      "obfuscated": false
+    },
+    {
+      "path": "frontside/assets/index-DntYMxR9.js",
+      "size": 1486466,
+      "sha256": "f91432a3e874c34e91080eb1c6819afaedecaf6dcd613d2b9aaf84057c25ce41",
       "obfuscated": false
     },
     {
@@ -94,7 +94,7 @@
     {
       "path": "frontside/index.html",
       "size": 471,
-      "sha256": "778e00699438fcf10355f03529e8975717adadf0df8ff89ca7495362c0e20135",
+      "sha256": "b8cd89ede93e235335a0ac90908dbdca73c7ad830382f5f555ad04122bdaa5c9",
       "obfuscated": false
     },
     {
@@ -135,8 +135,8 @@
     },
     {
       "path": "backend/dist/app.js",
-      "size": 39398,
-      "sha256": "1c1e0c701e148bac66f07e129dc742265363eaa5177ccb6cdb3df010204943e3",
+      "size": 37898,
+      "sha256": "c68ec4c7b01900c48acd3400db00dd552db775d5837d640000c34927f088d6fb",
       "obfuscated": true
     },
     {
@@ -291,8 +291,8 @@
     },
     {
       "path": "backend/dist/model.js",
-      "size": 12967,
-      "sha256": "6aede8c7fd715af2eaad2a46b74e5af1b51d26540f3a468790a36a663c2b924a",
+      "size": 12980,
+      "sha256": "47889564d6f7ac521845a424aaf28deb9813fd15a9c0371d926596432f5922cb",
       "obfuscated": true
     },
     {
@@ -315,8 +315,8 @@
     },
     {
       "path": "backend/dist/routes/automation-diagnostics.js",
-      "size": 46748,
-      "sha256": "039ea5cae9f7db596062eecbfa221d696f69f1efc646ee2710d9dda504977a1d",
+      "size": 47197,
+      "sha256": "97d43e6c32eb74b1bb9595d714230bf16f1af6615501453f4b7b85c8ecbf2109",
       "obfuscated": true
     },
     {
@@ -327,8 +327,8 @@
     },
     {
       "path": "backend/dist/routes/cangyuan-account.js",
-      "size": 4423,
-      "sha256": "27a978c4a64e4e982bd95a65cd5183b20f041f21e3f9a3eb392c11bc5981d2e5",
+      "size": 4525,
+      "sha256": "e250383c749694c2133fd885f85f13912ea316970b0812fb11241ae1c5f26a5a",
       "obfuscated": true
     },
     {
@@ -375,8 +375,8 @@
     },
     {
       "path": "backend/dist/routes/juxchen-account.js",
-      "size": 3995,
-      "sha256": "40374592cfa7e23bd517243053a09285eaec8b56a84f46d636d7176d666bc25d",
+      "size": 4244,
+      "sha256": "48339ef4f671e6a1ad79de5aada49f4b47b1e111b2a11c9b948e439e879ac500",
       "obfuscated": true
     },
     {
@@ -387,8 +387,8 @@
     },
     {
       "path": "backend/dist/routes/openrouter-account.js",
-      "size": 4403,
-      "sha256": "05825359670a6babcc3735415c7ff270da752137c8c3909e0810d9f1fc499e2b",
+      "size": 4568,
+      "sha256": "70ba8c9d531cc94fac1287902a5bb2e557330f68302105cf71f22bfb233d9313",
       "obfuscated": true
     },
     {
@@ -464,15 +464,9 @@
       "obfuscated": true
     },
     {
-      "path": "backend/dist/services/all-product-oss-cleanup.js",
-      "size": 5001,
-      "sha256": "e5a46e758cd0f80bd7647dc384bec4c7abf675f72137300689c033778b4e21cd",
-      "obfuscated": true
-    },
-    {
       "path": "backend/dist/services/attribute-selection-generation.js",
-      "size": 22084,
-      "sha256": "8f2a477ca221852868dc2eb5038a972d71b246ff56e41e468ffd66c3e11d13dd",
+      "size": 22471,
+      "sha256": "e6b0e4687880c3625d2e918927fa45fc06fd7c4afaa39eeebc208759990d7ce1",
       "obfuscated": true
     },
     {
@@ -525,20 +519,20 @@
     },
     {
       "path": "backend/dist/services/cangyuan-image-diagnostic.js",
-      "size": 4964,
-      "sha256": "1fe2442b23fbc1f3cb43350e59a97e355a8ad2dd503e05e8dacab3eb29f614ec",
+      "size": 4874,
+      "sha256": "e9107b55120af787f97804b1c2da716f7c04cbfa4d907beba40bcb656e2bb6e4",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/cangyuan-image-generation.js",
-      "size": 11669,
-      "sha256": "6473b791bd65eab0081d24ee7c251a28609c9642d18bd457a0134df798d27bc1",
+      "size": 11426,
+      "sha256": "d409683051f292005436de2a413917d667f51b2248040eace659cb823dbe2c55",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/category-embedding.js",
-      "size": 5877,
-      "sha256": "3566a383450317830a689f269b5e0b28882c5ca647169052153979f3dd4d9696",
+      "size": 5682,
+      "sha256": "e9c6a1e4fe768c40cc4f0222baf12f2f91d8a02599e72511fd04545881164671",
       "obfuscated": true
     },
     {
@@ -573,8 +567,8 @@
     },
     {
       "path": "backend/dist/services/generation.js",
-      "size": 8121,
-      "sha256": "e6ba9756f0c9d10fb48c915eb87d92e5061203031acd7f1ea5e45eb5a64a81e9",
+      "size": 8174,
+      "sha256": "aa26b5cc1c025d165de6a4b2f77b3a4a1cab04d0bbedd6c738519eb7060b16c7",
       "obfuscated": true
     },
     {
@@ -603,8 +597,8 @@
     },
     {
       "path": "backend/dist/services/image-generation.js",
-      "size": 12619,
-      "sha256": "56f50ae67f8c3bc17257070c6e7871f83c85ab99b8ffc237d091a4f2356e0b2e",
+      "size": 12475,
+      "sha256": "d22abb5f8d4f395c5d72b39b7a1bcc9fa6ffdee0226012ce1392a6ab991205c6",
       "obfuscated": true
     },
     {
@@ -615,20 +609,20 @@
     },
     {
       "path": "backend/dist/services/jev-category-validation.js",
-      "size": 7076,
-      "sha256": "a91e8ac9e75991dafa011555506549d8c437e1d0a1c7e95ec5fccad555bb5030",
+      "size": 7177,
+      "sha256": "d5680468635d702b7960879e74ac59afd425f1a5c5c4c1061a92e6347793f8ba",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/juxchen-image-generation.js",
-      "size": 12976,
-      "sha256": "964d8f08930c4f74e56226e8eb08aea38e7c8b02afe455d079729393a5fb0914",
+      "size": 12646,
+      "sha256": "f26565d7980456cdf3051913938ab8df6be98a8e8c3617fea7249cee5c747d18",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/main-model-proxy-test.js",
-      "size": 9915,
-      "sha256": "5857960f6e21f2b748fc762c8fd992ac80f2ef4c3dfb5cebac301e29bdfcc320",
+      "size": 9969,
+      "sha256": "f16a8e28562d51ab3fd09d105a0d0f1dae9504056300119702ba3964e4f95574",
       "obfuscated": true
     },
     {
@@ -651,20 +645,26 @@
     },
     {
       "path": "backend/dist/services/model-http-transport.js",
-      "size": 2938,
-      "sha256": "05d963c3ae86d8c7bd733a86ecc7c5e0beeba8d04a3be4a76224ed024fdd8670",
+      "size": 2874,
+      "sha256": "9310a56563d023ea353b02b0b8cc42f0f738c2d71b1858bbb150ee26e51dba5e",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/model-key-balancer.js",
-      "size": 11977,
-      "sha256": "eff1cbb017b979dbfd08888f83dc0c72b586ccdb781624d5a9dda03b5ca3a83f",
+      "size": 11713,
+      "sha256": "f41c023da499a3a046362d2fd9f8c6b93f6b7768dfcf242056a5b296687890f4",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/model-request-retry.js",
-      "size": 6306,
-      "sha256": "10a5245c7fa32d2f7bc7bab0d7d867bfc58e04a1f607f6402284fd9e9b88cba0",
+      "size": 6578,
+      "sha256": "b6bec32fcbe1d84e922e97cd6735fb2f6c8fde39250c845b46501df6c81fed26",
+      "obfuscated": true
+    },
+    {
+      "path": "backend/dist/services/model-service-client.js",
+      "size": 5083,
+      "sha256": "e24c759c999924efab465326621361e2874aa8fed2e95c387428ece2c2119923",
       "obfuscated": true
     },
     {
@@ -675,8 +675,8 @@
     },
     {
       "path": "backend/dist/services/oss-images.js",
-      "size": 8260,
-      "sha256": "f922ba5f617aac2ea7ae65024993c6a0314025b19d23a95c3d26597a1677cdda",
+      "size": 7243,
+      "sha256": "05f6f80648ff28aadd0ffe7b3536442ba6a4efa816ddbde4a4d776345ebb0510",
       "obfuscated": true
     },
     {
@@ -969,8 +969,8 @@
     },
     {
       "path": "backend/dist/services/product-resume-readiness.js",
-      "size": 8945,
-      "sha256": "2cea2393cbd1ed5b7d23d6724e92200e9f18a2fb6bfe48f888da510f62e48812",
+      "size": 9419,
+      "sha256": "c326a03e23d5b0f9c95e07f427f2747675517f070bb213a66f74ac170b7c9d02",
       "obfuscated": true
     },
     {
