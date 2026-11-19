@@ -21,8 +21,8 @@
     },
     {
       "path": "run-client.sh",
-      "size": 3307,
-      "sha256": "43a64bac462f36767ca30415fe7b0cb81999931bd723d143e59a83acc3d6f21b",
+      "size": 3551,
+      "sha256": "70f3cc9bcc589a162ac40c1a27dff8426694cd5d30619f51c58b9b4e87abf831",
       "obfuscated": false
     },
     {
