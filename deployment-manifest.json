@@ -68,15 +68,15 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-CTw-hXEG.css",
-      "size": 67611,
-      "sha256": "3a4ba8e536a7e31dc1306e7458422104dc057e9319c426e0506e3d4323f8141a",
+      "path": "frontside/assets/index-C12oyTAf.js",
+      "size": 1489750,
+      "sha256": "5abc5514fccc697b89d0ab921eec63355e3969895192716389850c5169651188",
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-Cb0dVPwu.js",
-      "size": 1487601,
-      "sha256": "7187a7e20c61c97b851f7ebdbd1d56b1d237380218a62014f2b3bcbd3443ab82",
+      "path": "frontside/assets/index-CTw-hXEG.css",
+      "size": 67611,
+      "sha256": "3a4ba8e536a7e31dc1306e7458422104dc057e9319c426e0506e3d4323f8141a",
       "obfuscated": false
     },
     {
@@ -94,7 +94,7 @@
     {
       "path": "frontside/index.html",
       "size": 471,
-      "sha256": "0377c4bcda5f1d813f727c44d1fb54f3f95990275fd5e2ea878129c9828e39c7",
+      "sha256": "778e00699438fcf10355f03529e8975717adadf0df8ff89ca7495362c0e20135",
       "obfuscated": false
     },
     {
@@ -135,8 +135,8 @@
     },
     {
       "path": "backend/dist/app.js",
-      "size": 39059,
-      "sha256": "4ba7d1f69380274c647a48e278cf551b497e764554f3c7ae90464548b1decc7e",
+      "size": 39398,
+      "sha256": "1c1e0c701e148bac66f07e129dc742265363eaa5177ccb6cdb3df010204943e3",
       "obfuscated": true
     },
     {
@@ -345,8 +345,8 @@
     },
     {
       "path": "backend/dist/routes/client-runtime-config.js",
-      "size": 3137,
-      "sha256": "05dba126bbceac4e29832c4e0e29391a48f8520931488d0e2c3d39e8856d5602",
+      "size": 4501,
+      "sha256": "f1f9d0fafd8c9506545cc1ef2aa098dc975c4439ffbe5d1f075e91e796edd771",
       "obfuscated": true
     },
     {
@@ -549,8 +549,8 @@
     },
     {
       "path": "backend/dist/services/client-runtime-config.js",
-      "size": 6017,
-      "sha256": "ab2cb4ea54e5f2b994910a961e58007100216db4c8fa96a41d0484c39bcb407f",
+      "size": 6228,
+      "sha256": "fba1f22b107e125514f5aa90b995fa8aea7e63b50af41e2cf08c74ddc3f8b3b8",
       "obfuscated": true
     },
     {
@@ -626,6 +626,12 @@
       "obfuscated": true
     },
     {
+      "path": "backend/dist/services/main-model-proxy-test.js",
+      "size": 9915,
+      "sha256": "5857960f6e21f2b748fc762c8fd992ac80f2ef4c3dfb5cebac301e29bdfcc320",
+      "obfuscated": true
+    },
+    {
       "path": "backend/dist/services/material-languages.js",
       "size": 2267,
       "sha256": "ea940b546cb3704d222dfb0f2486485933782431dcaad59c06d7f4e7b05223bf",
@@ -645,14 +651,14 @@
     },
     {
       "path": "backend/dist/services/model-http-transport.js",
-      "size": 2874,
-      "sha256": "9310a56563d023ea353b02b0b8cc42f0f738c2d71b1858bbb150ee26e51dba5e",
+      "size": 2938,
+      "sha256": "05d963c3ae86d8c7bd733a86ecc7c5e0beeba8d04a3be4a76224ed024fdd8670",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/model-key-balancer.js",
-      "size": 11428,
-      "sha256": "6fa478472a50665de55294e948719f2e7354d4b29b2e041b51ad18dc344a8c0a",
+      "size": 11977,
+      "sha256": "eff1cbb017b979dbfd08888f83dc0c72b586ccdb781624d5a9dda03b5ca3a83f",
       "obfuscated": true
     },
     {
