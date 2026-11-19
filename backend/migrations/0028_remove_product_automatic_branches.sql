@@ -1,0 +1,1 @@
+DROP TABLE product_automatic_branches;

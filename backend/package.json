@@ -1,0 +1,48 @@
+{
+  "name": "miaoshou-auto-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/server.js",
+    "local:http": "node dist/cli/local-http-server.js",
+    "inbox:sync": "node dist/cli/product-common-inbox-sync.js",
+    "publish:records": "node dist/cli/miaoshou-publish-records.js",
+    "model-services:import": "node dist/cli/model-services-import.js",
+    "db:migrate": "node dist/cli/product-db-migrate.js",
+    "category:index": "node dist/cli/product-category-index.js",
+    "autofill:check": "node dist/cli/product-autofill-check.js",
+    "editor-config:check": "node dist/cli/product-editor-config-check.js",
+    "browser-open": "node poc/browser-open.mjs",
+    "browser-close": "node poc/browser-close.mjs",
+    "size-template:browser-check": "node poc/size-template-browser-smoke.mjs",
+    "size-template:browser-login": "node poc/size-template-browser-login.mjs",
+    "size-template:browser-prepare": "node poc/size-template-browser-prepare.mjs",
+    "1688:collect": "node dist/cli/collect-1688-detail-images.js",
+    "size:sources": "node dist/cli/product-size-reference-sources.js"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "ali-oss": "^6.23.0",
+    "dotenv": "^18.0.3",
+    "fastify": "^5.0.0",
+    "htmlparser2": "^12.0.0",
+    "jsonc-parser": "^3.3.1",
+    "pg": "^8.23.0",
+    "playwright": "^1.64.0",
+    "sharp": "^0.34.5",
+    "undici": "^7.30.2"
+  },
+  "devDependencies": {
+    "@types/ali-oss": "^6.23.3",
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.23.1",
+    "prettier": "^3.9.9",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
