@@ -39,14 +39,14 @@
     },
     {
       "path": "install-client.sh",
-      "size": 7235,
-      "sha256": "473c7aaea0e5cc8ad500617be85cdfd25b4e0ec6584345a6ae2caef44139a2fa",
+      "size": 7044,
+      "sha256": "03c4cd4d142152a2cd25ccb618e41c768acfcd737cc5a3b842ed2926b500a828",
       "obfuscated": false
     },
     {
       "path": "install-client-user.sh",
-      "size": 1072,
-      "sha256": "b49f82a04b661d6fe3dd7ef7bed6480f373e6e237493d8be71c58d8ac6c63a2c",
+      "size": 747,
+      "sha256": "cd5ddc3694a00f8d7fd0e8bac38bee9ddec640b9b49ed54b7739d477e6d2f5ce",
       "obfuscated": false
     },
     {
@@ -339,8 +339,8 @@
     },
     {
       "path": "backend/dist/routes/client-account.js",
-      "size": 21685,
-      "sha256": "fe85cb75f16d969c58b454d643675a2632c8c5f4ca95f205316544924acbedd1",
+      "size": 21589,
+      "sha256": "50c49aa6e7d2f39bac648443196bba5e9497c2875e2bf42b6690508655a003c2",
       "obfuscated": true
     },
     {
@@ -513,8 +513,8 @@
     },
     {
       "path": "backend/dist/services/browser-cdp-host.js",
-      "size": 2522,
-      "sha256": "9dee3a0ac5b93fb385632905206254b83f5546a6a7d72476d4865a466005a974",
+      "size": 2198,
+      "sha256": "b552e08c26db0b33d12d1216a894123d455bb55b6e71687dde6463fdc052bcb7",
       "obfuscated": true
     },
     {
@@ -2157,8 +2157,8 @@
     },
     {
       "path": "backend/poc/browser-process.mjs",
-      "size": 10980,
-      "sha256": "74616deb669414ca92240d203dbf543fefa1634d4bdf63785b19493e60c39968",
+      "size": 11674,
+      "sha256": "09618f4fc13e561bc3ce650f781f464357ef165092d36e8f88efe4508c3ee1b2",
       "obfuscated": true
     },
     {

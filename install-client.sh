@@ -112,14 +112,7 @@ runuser -u postgres -- psql -Atqc "SELECT default_version FROM pg_available_exte
 run_user_install() {
     runuser -u "$client_user" -- env HOME="$client_home" PATH="$PATH" bash "$source_dir/install-client-user.sh" "$source_dir" "$release" "$config"
 }
-if run_user_install; then :
-else
-    result=$?
-    if [[ "$result" != 42 ]]; then exit "$result"; fi
-    cd "$release/backend"
-    ./node_modules/.bin/playwright install-deps chromium
-    run_user_install
-fi
+run_user_install
 db_password="$(runuser -u "$client_user" -- "$node_path" "$release/install-client.mjs" db-password "$config")"
 role_exists="$(runuser -u postgres -- psql -Atqc "SELECT 1 FROM pg_roles WHERE rolname='miaoshou_client'")"
 if [[ -z "$role_exists" ]]; then
