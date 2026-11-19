@@ -68,9 +68,9 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-BOBR6MW2.js",
-      "size": 1486690,
-      "sha256": "1c5ac823b670c3c9732533f24fb5f3d7df42eb5036fb3ebc4139826ba24d7057",
+      "path": "frontside/assets/index-BV4R6Mu1.js",
+      "size": 1487102,
+      "sha256": "90f897efb98646caf408fac357e3ec8352c24d013e959a6924436aaaeea86690",
       "obfuscated": false
     },
     {
@@ -94,7 +94,7 @@
     {
       "path": "frontside/index.html",
       "size": 471,
-      "sha256": "9fccb07d34c3fbfadfda8f2be58b116400f84ed257b475531553e500a2ffe3f9",
+      "sha256": "e8037c598d00b2784d0f0eb654a38355d5b38f6124cda774cacc70b376b14d38",
       "obfuscated": false
     },
     {
@@ -549,8 +549,8 @@
     },
     {
       "path": "backend/dist/services/client-runtime-config.js",
-      "size": 5696,
-      "sha256": "d6cd38aa17b0d919141b161368c3f322328aedbc8369298d5769b8e314c7e887",
+      "size": 6017,
+      "sha256": "ab2cb4ea54e5f2b994910a961e58007100216db4c8fa96a41d0484c39bcb407f",
       "obfuscated": true
     },
     {
@@ -2157,8 +2157,8 @@
     },
     {
       "path": "backend/poc/browser-process.mjs",
-      "size": 10033,
-      "sha256": "4efbdf39fd384831abaa07d8ddb28aa16e73a60b968823a415bc476cf51e374d",
+      "size": 10767,
+      "sha256": "39f91b5c2e703f4a3c625b62d497fd09102525bf6e232c1dbbf5956ea5226806",
       "obfuscated": true
     },
     {
