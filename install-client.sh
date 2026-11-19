@@ -66,6 +66,21 @@ stop_legacy_node() {
         printf 'Stopped the old client process %s.\n' "$pid"
     fi
 }
+stop_legacy_services() {
+    local unit main_pid working exec_start
+    while read -r unit; do
+        [[ -n "$unit" ]] || continue
+        main_pid="$(systemctl show -P MainPID "$unit" 2>/dev/null || true)"
+        working="$(systemctl show -P WorkingDirectory "$unit" 2>/dev/null || true)"
+        exec_start="$(systemctl show -P ExecStart "$unit" 2>/dev/null || true)"
+        if [[ "$working" == "$legacy_directory" || "$exec_start" == *"$legacy_directory"* || "$main_pid" == "$(listener_pid 3000)" || "$main_pid" == "$(listener_pid 8080)" ]]; then
+            systemctl stop "$unit" >/dev/null 2>&1 || true
+            systemctl disable "$unit" >/dev/null 2>&1 || true
+            printf 'Stopped the old client service %s.\n' "$unit"
+        fi
+    done < <(systemctl list-units --all --type=service --no-legend --no-pager 2>/dev/null | awk '{print $1}')
+}
+stop_legacy_services
 backend_pid="$(listener_pid 3000)"
 if [[ -n "$backend_pid" ]] && is_legacy_node "$backend_pid"; then
     stop_legacy_node "$backend_pid"
