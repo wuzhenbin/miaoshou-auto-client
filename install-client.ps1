@@ -39,39 +39,5 @@ if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 }
 
-$url = 'http://127.0.0.1:8080/'
-$apiUrl = 'http://127.0.0.1:8080/auth/session'
-$arguments = '-d "{0}" --exec bash "{1}/run-client.sh" "{1}"' -f $distribution, $linuxSource
-$runner = Start-Process -FilePath wsl.exe -ArgumentList $arguments -NoNewWindow -PassThru
-try {
-    $ready = $false
-    for ($attempt = 0; $attempt -lt 30; $attempt++) {
-        if ($runner.HasExited) { throw 'Client stopped during startup. See the messages above.' }
-        try {
-            $request = [System.Net.HttpWebRequest]::Create($url)
-            $request.Proxy = $null
-            $request.Timeout = 3000
-            $response = $request.GetResponse()
-            try { $ready = [int]$response.StatusCode -eq 200 } finally { $response.Close() }
-            if ($ready) {
-                $apiRequest = [System.Net.HttpWebRequest]::Create($apiUrl)
-                $apiRequest.Proxy = $null
-                $apiRequest.Timeout = 3000
-                $apiResponse = $apiRequest.GetResponse()
-                try { $ready = [int]$apiResponse.StatusCode -eq 200 } finally { $apiResponse.Close() }
-                if ($ready) { break }
-            }
-        } catch { $ready = $false }
-        Start-Sleep -Seconds 1
-    }
-    if (-not $ready) { throw 'Client page or backend API did not become ready. See the messages above.' }
-    Start-Process $url
-    Write-Host "Client ready: $url"
-    Write-Host 'Keep this window open while using the client.'
-    $runner.WaitForExit()
-    throw 'The client stopped. Run run-client.cmd to restart it.'
-} finally {
-    if (-not $runner.HasExited) {
-        Stop-Process -Id $runner.Id -ErrorAction SilentlyContinue
-    }
-}
+& wsl.exe -d $distribution --exec bash "$linuxSource/run-client.sh" "$linuxSource"
+if ($LASTEXITCODE -ne 0) { throw 'Client stopped. See the messages above, then run run-client.cmd to restart.' }

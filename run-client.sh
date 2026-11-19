@@ -36,6 +36,9 @@ for attempt in $(seq 1 30); do
         curl --noproxy '*' --silent --fail --max-time 2 http://127.0.0.1:8080/auth/session >/dev/null; then
         printf '%s\n' 'Client ready at http://127.0.0.1:8080/'
         printf '%s\n' 'Keep this window open while using the client.'
+        if command -v cmd.exe >/dev/null 2>&1; then
+            cmd.exe /c start '""' http://127.0.0.1:8080/ >/dev/null 2>&1 || true
+        fi
         if wait -n "$backend_pid" "$web_pid"; then :; fi
         printf '%s\n' 'A client process stopped. Run run-client.cmd to restart.' >&2
         exit 1
