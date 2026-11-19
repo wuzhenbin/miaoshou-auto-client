@@ -48,6 +48,16 @@ if [[ -n "$(listener_pid 8080)" ]]; then
     fi
     exit 1
 fi
+backend_listener="$(listener_pid 3000)"
+if [[ -n "$backend_listener" ]]; then
+    printf '%s\n' 'Port 3000 is already in use; the new backend cannot start.' >&2
+    ss -ltnp '( sport = :3000 )' >&2 || true
+    printf 'Listener PID %s: executable=%s directory=%s parent=%s\n' "$backend_listener" \
+        "$(readlink "/proc/$backend_listener/exe" 2>/dev/null || printf unknown)" \
+        "$(readlink "/proc/$backend_listener/cwd" 2>/dev/null || printf unknown)" \
+        "$(awk '/^PPid:/ { print $2 }' "/proc/$backend_listener/status" 2>/dev/null || printf unknown)" >&2
+    exit 1
+fi
 node dist/server.js &
 backend_pid=$!
 node dist/cli/local-http-server.js &
@@ -65,6 +75,10 @@ for attempt in $(seq 1 30); do
     fi
     if curl --noproxy '*' --silent --fail --max-time 2 http://127.0.0.1:8080/ >/dev/null &&
         curl --noproxy '*' --silent --fail --max-time 2 http://127.0.0.1:8080/auth/session >/dev/null; then
+        if ! kill -0 "$backend_pid" 2>/dev/null || ! kill -0 "$web_pid" 2>/dev/null; then
+            printf '%s\n' 'A client process stopped during startup. See the error above.' >&2
+            exit 1
+        fi
         printf '%s\n' 'Client ready at http://127.0.0.1:8080/'
         printf '%s\n' 'Keep this window open while using the client.'
         if command -v cmd.exe >/dev/null 2>&1; then
