@@ -27,6 +27,15 @@ client_node() {
     return 1
 }
 web_listener="$(listener_pid 8080)"
+if [[ -n "$web_listener" ]] &&
+    [[ "$(readlink "/proc/$web_listener/cwd" 2>/dev/null)" == "$release/backend" ]] &&
+    [[ "$(readlink "/proc/$(listener_pid 3000)/cwd" 2>/dev/null)" == "$release/backend" ]]; then
+    printf '%s\n' 'This client version is already running at http://127.0.0.1:8080/'
+    if command -v cmd.exe >/dev/null 2>&1; then
+        cmd.exe /c start '""' http://127.0.0.1:8080/ >/dev/null 2>&1 || true
+    fi
+    exit 0
+fi
 if [[ -n "$web_listener" ]] && client_node "$web_listener"; then
     web_directory="$(readlink "/proc/$web_listener/cwd" 2>/dev/null || true)"
     backend_status="$(curl --noproxy '*' --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://127.0.0.1:3000/auth/session 2>/dev/null || true)"
