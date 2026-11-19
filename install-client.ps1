@@ -60,30 +60,26 @@ if ($backendInstalled -and $webInstalled) {
     Start-ScheduledTask -TaskName $taskName
 }
 
-$keepAlive = Start-Process -FilePath "$env:WINDIR\System32\wsl.exe" -ArgumentList "-d `"$distribution`" --exec /bin/sleep infinity" -NoNewWindow -PassThru
 $url = 'http://127.0.0.1:8080/workbench'
-try {
-    $ready = $false
-    for ($attempt = 0; $attempt -lt 30; $attempt++) {
-        if ($keepAlive.HasExited) { throw 'The WSL2 keepalive process stopped unexpectedly.' }
-        try {
-            $request = [System.Net.HttpWebRequest]::Create($url)
-            $request.Proxy = $null
-            $request.Timeout = 3000
-            $response = $request.GetResponse()
-            try { $ready = [int]$response.StatusCode -eq 200 } finally { $response.Close() }
-            if ($ready) { break }
-        } catch { Start-Sleep -Seconds 1 }
-    }
-    if ($ready) {
-        Start-Process $url
-        Write-Host "Client ready: $url"
-    } else {
-        Write-Warning "The client is running in WSL2, but Windows cannot reach $url. Check WSL2 localhost forwarding."
-    }
-    Write-Host 'Keep this window open while using the client.'
-    $keepAlive.WaitForExit()
+$ready = $false
+for ($attempt = 0; $attempt -lt 30; $attempt++) {
+    try {
+        $request = [System.Net.HttpWebRequest]::Create($url)
+        $request.Proxy = $null
+        $request.Timeout = 3000
+        $response = $request.GetResponse()
+        try { $ready = [int]$response.StatusCode -eq 200 } finally { $response.Close() }
+        if ($ready) { break }
+    } catch { Start-Sleep -Seconds 1 }
+}
+if ($ready) {
+    Start-Process $url
+    Write-Host "Client ready: $url"
+} else {
+    Write-Warning "The client is running in WSL2, but Windows cannot reach $url. Check WSL2 localhost forwarding."
+}
+Write-Host 'Keep this window open while using the client.'
+& wsl.exe -d $distribution --exec /bin/sleep infinity
+if ($LASTEXITCODE -ne 0) {
     throw 'The WSL2 keepalive process stopped; run run-client.cmd to restart the client.'
-} finally {
-    if (-not $keepAlive.HasExited) { Stop-Process -Id $keepAlive.Id -Force }
 }
