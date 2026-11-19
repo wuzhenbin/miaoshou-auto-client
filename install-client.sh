@@ -24,7 +24,7 @@ backend_unit=/etc/systemd/system/miaoshou-client-backend.service
 web_unit=/etc/systemd/system/miaoshou-client-web.service
 package_installed() { dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -qx 'install ok installed'; }
 missing_packages=()
-for package in ca-certificates curl gnupg git jq openssl postgresql postgresql-contrib; do
+for package in ca-certificates curl gnupg git jq openssl postgresql; do
     if ! package_installed "$package"; then missing_packages+=("$package"); fi
 done
 if (( ${#missing_packages[@]} )); then

@@ -13,8 +13,34 @@ if ! pg_isready -q; then
     pg_major="$(pg_lsclusters --no-header | awk '$2 == "main" { print $1; exit }')"
     sudo pg_ctlcluster --skip-systemctl-redirect "$pg_major" main start
 fi
+# A previous Windows launcher could exit while leaving its Node children orphaned in WSL.
+stopped_orphan=0
+for process in /proc/[0-9]*; do
+    process_id="${process##*/}"
+    process_cwd="$(readlink "$process/cwd" 2>/dev/null)" || continue
+    case "$process_cwd" in "$HOME"/.local/share/miaoshou-auto/releases/*/backend) ;; *) continue ;; esac
+    process_parent="$(awk '/^PPid:/ { print $2 }' "$process/status" 2>/dev/null)" || continue
+    [[ "$process_parent" == 1 ]] || continue
+    process_args=()
+    mapfile -d '' -t process_args < "$process/cmdline" 2>/dev/null || continue
+    [[ "${process_args[0]:-}" == node || "${process_args[0]:-}" == */node ]] || continue
+    case "${process_args[1]:-}" in
+        dist/server.js|dist/cli/local-http-server.js|*/backend/dist/server.js|*/backend/dist/cli/local-http-server.js)
+            kill "$process_id" 2>/dev/null || true
+            printf 'Stopped an orphaned client process (%s).\n' "$process_id"
+            stopped_orphan=1
+            ;;
+    esac
+done
+if [[ "$stopped_orphan" == 1 ]]; then
+    for attempt in 1 2 3 4 5; do
+        if ! curl --noproxy '*' --silent --fail --max-time 1 http://127.0.0.1:8080/ >/dev/null; then break; fi
+        sleep 1
+    done
+fi
 if curl --noproxy '*' --silent --fail --max-time 2 http://127.0.0.1:8080/ >/dev/null; then
-    printf '%s\n' 'Port 8080 is already in use. Close the other client window first.' >&2
+    printf '%s\n' 'Port 8080 is still in use. Close the other client window or application first.' >&2
+    if command -v ss >/dev/null 2>&1; then ss -ltnp '( sport = :8080 )' >&2 || true; fi
     exit 1
 fi
 node dist/server.js &
