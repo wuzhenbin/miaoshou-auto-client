@@ -1,8 +1,11 @@
 # 妙手自动化部署目录
 
-将本目录内容上传到目标项目目录，包含 package.json、deployment-manifest.json、frontside/ 和 backend/。
-根目录无依赖，无需 npm install；在 backend/ 执行 npm ci --omit=dev 安装后端依赖。
-业务配置、数据库迁移、Chromium 安装及静态服务配置见 backend/README.md 和项目部署文档。
+本目录是客户端生产产物，不含业务源码或已填写的配置。
+Windows 先准备 WSL2 + Ubuntu，双击 install-client.cmd；缺少 WSL2 时只提示，不自动安装。
+macOS 双击 install-client.command。首次安装按提示填写管理中心地址与管理员生成的一次性配对码。
+安装脚本检查并安装运行依赖，在客户电脑生成私有配置、数据库角色和本地服务；不会启动两个业务浏览器或执行商品任务。
+安装前从项目部署指南确认目标数据、现有服务和首次安装条件；已有另一版本时不要用首装入口覆盖。
+根目录无 npm 依赖；手工部署所需依赖、数据库和服务配置见 backend/README.md。
 在本目录由用户手动执行：
 
     npm run browser-open

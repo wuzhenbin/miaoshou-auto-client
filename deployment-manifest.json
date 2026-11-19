@@ -9,8 +9,44 @@
     },
     {
       "path": "README.md",
-      "size": 676,
-      "sha256": "9e4b7564cc0584f332a0eebf0dd0850186ae4275ea48aed2b803dcf6eaf3d18d",
+      "size": 1057,
+      "sha256": "ee05bf530872f5779a905c67d0cb55e02b13543784a149480ab8c9ce1ba84d7f",
+      "obfuscated": false
+    },
+    {
+      "path": "install-client.cmd",
+      "size": 123,
+      "sha256": "ea7491a586c660f84f3abadbf167305e66a54fe2eca5cc0278d718fe944dba74",
+      "obfuscated": false
+    },
+    {
+      "path": "install-client.ps1",
+      "size": 2482,
+      "sha256": "ee6b3fb28556b01c5681fc0668d84dfc18a1c144e90befbf4d14a89cb231f1f5",
+      "obfuscated": false
+    },
+    {
+      "path": "install-client.sh",
+      "size": 6022,
+      "sha256": "60b2336b7f5b05783e8c2d4c0539b6bb8f8926079c55e6c6c4527067b4f174e8",
+      "obfuscated": false
+    },
+    {
+      "path": "install-client.mjs",
+      "size": 7000,
+      "sha256": "e2d18e1c5863a28749dcd3d9a1e5d42e0d73fadf2e9aa47db270ede19179f03f",
+      "obfuscated": false
+    },
+    {
+      "path": "install-client.command",
+      "size": 93,
+      "sha256": "6741695239be4244895970001300da30ab6a3d59238d0ecc4d1aa6e19f2b78d5",
+      "obfuscated": false
+    },
+    {
+      "path": "install-client-mac.sh",
+      "size": 5447,
+      "sha256": "5d6a0e422cc8af47ecbc96ad0bcb40774453ed4526b25eae19e09006d16d518d",
       "obfuscated": false
     },
     {
@@ -63,8 +99,8 @@
     },
     {
       "path": "backend/README.md",
-      "size": 918,
-      "sha256": "b75cfe870e59dfecadbc5b810dd3b89f4628f85c6a624e4fe0cab7e8d4e15797",
+      "size": 988,
+      "sha256": "d80badb58414c5d120daa559e8ba790b2aba87f619f5c2db6bafaf7e585b273c",
       "obfuscated": false
     },
     {
