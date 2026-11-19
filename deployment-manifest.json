@@ -68,15 +68,15 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-CTw-hXEG.css",
-      "size": 67611,
-      "sha256": "3a4ba8e536a7e31dc1306e7458422104dc057e9319c426e0506e3d4323f8141a",
+      "path": "frontside/assets/index-BwqCt4cN.css",
+      "size": 67816,
+      "sha256": "3f30600125519fbbb3f266e03db9b3a63dfcd94eef7d03dbbd727c01d578855c",
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-DntYMxR9.js",
-      "size": 1486466,
-      "sha256": "f91432a3e874c34e91080eb1c6819afaedecaf6dcd613d2b9aaf84057c25ce41",
+      "path": "frontside/assets/index-MchoaiZs.js",
+      "size": 1485641,
+      "sha256": "8486b259af9cf303a288d2fbe2ee7e3bf98137ecb4d9f96342a379224561aca2",
       "obfuscated": false
     },
     {
@@ -94,7 +94,7 @@
     {
       "path": "frontside/index.html",
       "size": 471,
-      "sha256": "b8cd89ede93e235335a0ac90908dbdca73c7ad830382f5f555ad04122bdaa5c9",
+      "sha256": "a9fe2ef898dae362867c8cacff78eed2412161e52bd21e6ca4cb9ca394cb3304",
       "obfuscated": false
     },
     {
@@ -135,8 +135,8 @@
     },
     {
       "path": "backend/dist/app.js",
-      "size": 37898,
-      "sha256": "c68ec4c7b01900c48acd3400db00dd552db775d5837d640000c34927f088d6fb",
+      "size": 38720,
+      "sha256": "3a850ea6403ea52f70ce90e4f0a780eabea5a58b7556e79ca54691b2258d06af",
       "obfuscated": true
     },
     {
@@ -315,8 +315,8 @@
     },
     {
       "path": "backend/dist/routes/automation-diagnostics.js",
-      "size": 47197,
-      "sha256": "97d43e6c32eb74b1bb9595d714230bf16f1af6615501453f4b7b85c8ecbf2109",
+      "size": 47815,
+      "sha256": "87e7feff6ceb66a1f620cfc73b47645bedd72c189ccb475a748cf34963bb7304",
       "obfuscated": true
     },
     {
@@ -345,8 +345,8 @@
     },
     {
       "path": "backend/dist/routes/client-runtime-config.js",
-      "size": 4501,
-      "sha256": "f1f9d0fafd8c9506545cc1ef2aa098dc975c4439ffbe5d1f075e91e796edd771",
+      "size": 5624,
+      "sha256": "e9b2b7714adbc1898e46bfeb7bdc7362f6195b9434034cfc19c9776646f09009",
       "obfuscated": true
     },
     {
@@ -621,8 +621,8 @@
     },
     {
       "path": "backend/dist/services/main-model-proxy-test.js",
-      "size": 9969,
-      "sha256": "f16a8e28562d51ab3fd09d105a0d0f1dae9504056300119702ba3964e4f95574",
+      "size": 9831,
+      "sha256": "3b42a6ef6615e0222591a971a49ca6c259fb7008a370f7b1e108f341a799a65d",
       "obfuscated": true
     },
     {
@@ -645,8 +645,8 @@
     },
     {
       "path": "backend/dist/services/model-http-transport.js",
-      "size": 2874,
-      "sha256": "9310a56563d023ea353b02b0b8cc42f0f738c2d71b1858bbb150ee26e51dba5e",
+      "size": 2752,
+      "sha256": "b55c5d9acfdb0868178dc1ba07887d852a1dfef796dea0eecdc3494af86a05b9",
       "obfuscated": true
     },
     {
@@ -657,20 +657,26 @@
     },
     {
       "path": "backend/dist/services/model-request-retry.js",
-      "size": 6578,
-      "sha256": "b6bec32fcbe1d84e922e97cd6735fb2f6c8fde39250c845b46501df6c81fed26",
+      "size": 6380,
+      "sha256": "186cc6562c5048e86b3004ea8c2440d27fa09934c025c07f35768aa8d222a9db",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/model-service-client.js",
-      "size": 5083,
-      "sha256": "e24c759c999924efab465326621361e2874aa8fed2e95c387428ece2c2119923",
+      "size": 4795,
+      "sha256": "73f91ee1616a68a14dba587d01ec4221578efaa6a7b136b69089bd256bbf0037",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/model-service-store.js",
       "size": 20586,
       "sha256": "02ac029f86473d45eaac34711bfa016368841701d6796f56b706feea08a42e4a",
+      "obfuscated": true
+    },
+    {
+      "path": "backend/dist/services/openrouter-jev-proxy-test.js",
+      "size": 8651,
+      "sha256": "5cc5acc1993b9b9a5aa02885d81de6f8628489dc29adf09ec4be12e376d618ef",
       "obfuscated": true
     },
     {
@@ -867,14 +873,14 @@
     },
     {
       "path": "backend/dist/services/product-execution.js",
-      "size": 256243,
-      "sha256": "e3bd4780b6542d213fdbe40b4783cb6282109c6bb5a1c88b6d23ea8e59325965",
+      "size": 255105,
+      "sha256": "bc47ab88841edd6a0cfd7a0f7846f6f944c9639c965798353eebfc771f5be983",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/product-global-retry.js",
-      "size": 19463,
-      "sha256": "7905d955a8bd2cb6d36b102b44eb47e685098b7d032e14bcd27c0953910873c2",
+      "size": 20551,
+      "sha256": "b3027aa65c68ede03cddf47bd19f6712f733b331138e03abdb83c19f64f944f8",
       "obfuscated": true
     },
     {
@@ -1299,8 +1305,8 @@
     },
     {
       "path": "backend/dist/services/size-template-browser-status.js",
-      "size": 7017,
-      "sha256": "8fc33825a00cd0f672e0c5610f3089246f661d2b3d7c2d79f2af45362a0c7dfe",
+      "size": 7129,
+      "sha256": "a11ec2d76e618b3e39260df24f4a94d6f3d5cc2c7035cca4f26cde7a0abcef28",
       "obfuscated": true
     },
     {
