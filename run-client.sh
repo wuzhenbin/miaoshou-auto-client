@@ -52,6 +52,21 @@ if [[ -n "$(listener_pid 8080)" ]]; then
     exit 1
 fi
 backend_listener="$(listener_pid 3000)"
+if [[ -n "$backend_listener" ]] && client_node "$backend_listener" &&
+    [[ "$(readlink "/proc/$backend_listener/cwd" 2>/dev/null)" == "$HOME/miaoshou-auto/backend" ]]; then
+    old_session="$(curl --noproxy '*' --silent --fail --max-time 3 http://127.0.0.1:3000/client-account/session 2>/dev/null || true)"
+    old_health="$(curl --noproxy '*' --silent --fail --max-time 3 http://127.0.0.1:3000/product-runtime-health 2>/dev/null || true)"
+    if jq -e '.state == null and .runtimeAccount == null' >/dev/null 2>&1 <<<"$old_session" ||
+        jq -e '.maintenance == true and (.execution.activeProducts // 0) == 0 and (.execution.activeAdvances // 0) == 0 and ((.execution.executions // []) | length) == 0 and (.scheduler.admissions.writes.active // 0) == 0 and (.scheduler.admissions.writes.queued // 0) == 0' >/dev/null 2>&1 <<<"$old_health"; then
+        kill "$backend_listener"
+        printf 'Stopped the idle old client backend (PID %s).\n' "$backend_listener"
+        for attempt in 1 2 3 4 5; do
+            if [[ -z "$(listener_pid 3000)" ]]; then break; fi
+            sleep 1
+        done
+        backend_listener="$(listener_pid 3000)"
+    fi
+fi
 if [[ -n "$backend_listener" ]]; then
     printf '%s\n' 'Port 3000 is already in use; the new backend cannot start.' >&2
     ss -ltnp '( sport = :3000 )' >&2 || true
