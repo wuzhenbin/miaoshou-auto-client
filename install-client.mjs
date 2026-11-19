@@ -5,6 +5,7 @@ import { lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/
 import { dirname, join, resolve } from "node:path"
 
 const hash = data => createHash("sha256").update(data).digest("hex")
+const defaultServerUrl = "https://103.112.1.161/"
 const required = ["CLIENT_LOGIN_TOKEN", "SERVER_MODEL_READ_TOKEN", "SERVER_MODEL_DATA_KEY",
     "OSS_BUCKET", "OSS_REGION", "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET"]
 const runtimeFiles = new Set(["package.json", "README.md", "run-client.cmd", "install-client.cmd", "install-client.ps1",
@@ -70,13 +71,13 @@ function validServerUrl(value) {
     return url.origin
 }
 
-async function configure(path) {
+async function configure(path, serverUrlOverride) {
     try { await lstat(path); console.log("Existing private client configuration retained."); return }
     catch (error) { if (error.code !== "ENOENT") throw error }
+    const serverUrl = validServerUrl(serverUrlOverride ?? defaultServerUrl)
     const reader = createInterface({ input: stdin, output: stdout })
-    let serverUrl, code
+    let code
     try {
-        serverUrl = validServerUrl(await reader.question("Management center URL: "))
         code = (await reader.question("One-time pairing code: ")).trim()
     } finally { reader.close() }
     if (!/^[A-Za-z0-9_-]{16}$/.test(code)) throw new Error("Invalid pairing code")
@@ -111,6 +112,6 @@ async function databasePassword(path) {
 
 const [action, first, second] = process.argv.slice(2)
 if (action === "prepare" && first && second) await prepare(resolve(first), resolve(second))
-else if (action === "configure" && first) await configure(resolve(first))
+else if (action === "configure" && first) await configure(resolve(first), second)
 else if (action === "db-password" && first) await databasePassword(resolve(first))
-else throw new Error("Usage: install-client.mjs prepare <source> <release> | configure <private-env> | db-password <private-env>")
+else throw new Error("Usage: install-client.mjs prepare <source> <release> | configure <private-env> [server-url] | db-password <private-env>")
