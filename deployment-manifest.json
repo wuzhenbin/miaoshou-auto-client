@@ -74,15 +74,15 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-MchoaiZs.js",
-      "size": 1485641,
-      "sha256": "8486b259af9cf303a288d2fbe2ee7e3bf98137ecb4d9f96342a379224561aca2",
+      "path": "frontside/assets/index-VteH-9M0.js",
+      "size": 1485640,
+      "sha256": "07ef318a4b9c0add3a004b1e51a7c6c9de7465087d60c974c26aeb21e833216d",
       "obfuscated": false
     },
     {
       "path": "frontside/favicon.ico",
-      "size": 32050,
-      "sha256": "dd02e04b8c98cc8cbc511457d3377f41847545121b9ce2b8df2be3bdcccab1c2",
+      "size": 73372,
+      "sha256": "5aa54be1f316798ddd29b6c9c386e007d1c7039d7d0e5593f28d4f583dc3e4fa",
       "obfuscated": false
     },
     {
@@ -93,20 +93,20 @@
     },
     {
       "path": "frontside/index.html",
-      "size": 471,
-      "sha256": "a9fe2ef898dae362867c8cacff78eed2412161e52bd21e6ca4cb9ca394cb3304",
+      "size": 468,
+      "sha256": "e4188d5e660249b5f2b78c1f8ed76f83837207cfe4bb4333f265798107cf9222",
+      "obfuscated": false
+    },
+    {
+      "path": "frontside/logo-mark.png",
+      "size": 16891,
+      "sha256": "1223a5fa26c4bf788fc65569941efba3f964c2c299f647eb7b8fdcc75447d3be",
       "obfuscated": false
     },
     {
       "path": "frontside/logo.png",
-      "size": 15852,
-      "sha256": "df1e205c809988561fc1117a3a1a69697009869454c1fb8263a43a59ed2999ff",
-      "obfuscated": false
-    },
-    {
-      "path": "frontside/logo.svg",
-      "size": 603,
-      "sha256": "c06fde0a6331b72ec0ae2daf3434c20213d5c6d203f4b9f768a74ff61327ae36",
+      "size": 1262164,
+      "sha256": "31232f9f6a5eaca521f7b21659d15b454abb9ddf8b46a1186cd63f618c3dd2f8",
       "obfuscated": false
     },
     {
