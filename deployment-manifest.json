@@ -68,15 +68,15 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-BwqCt4cN.css",
-      "size": 67816,
-      "sha256": "3f30600125519fbbb3f266e03db9b3a63dfcd94eef7d03dbbd727c01d578855c",
+      "path": "frontside/assets/index-C6aF5mkG.js",
+      "size": 1485245,
+      "sha256": "fe2f2b99f4941af6ef67b163a773b9c61dc4d38e17dda4e98a047ebce2adb12e",
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-VteH-9M0.js",
-      "size": 1485640,
-      "sha256": "07ef318a4b9c0add3a004b1e51a7c6c9de7465087d60c974c26aeb21e833216d",
+      "path": "frontside/assets/index-DpNRSGUx.css",
+      "size": 67965,
+      "sha256": "a30660232d71bd37bc210146acbac94bfcfffc435ee99fa68f5310adb29090b5",
       "obfuscated": false
     },
     {
@@ -94,7 +94,7 @@
     {
       "path": "frontside/index.html",
       "size": 468,
-      "sha256": "e4188d5e660249b5f2b78c1f8ed76f83837207cfe4bb4333f265798107cf9222",
+      "sha256": "45bbec209623830fdb406ddcb4d6ecc05067f99353b7291a1720b6adf6393a55",
       "obfuscated": false
     },
     {
@@ -759,8 +759,8 @@
     },
     {
       "path": "backend/dist/services/product-category-migration.js",
-      "size": 12551,
-      "sha256": "c243c6b6669a4f994c7367efa933ac0724e861b1e5d9cb87b95a7edf166ac647",
+      "size": 14946,
+      "sha256": "abd9c67bd899f5d183a59428607413299f298d311ca11e153cfe8bed6037aafc",
       "obfuscated": true
     },
     {
@@ -843,8 +843,8 @@
     },
     {
       "path": "backend/dist/services/product-drafts.js",
-      "size": 16410,
-      "sha256": "f4a09621d33f06d3558e184c8901f7e09998dc428aa70d47773193dc122d4ceb",
+      "size": 17015,
+      "sha256": "a159572c31bc0bae1d6d7a5dd1ad336dc804fdab9a6207da61df89afe077ebd6",
       "obfuscated": true
     },
     {
@@ -873,8 +873,8 @@
     },
     {
       "path": "backend/dist/services/product-execution.js",
-      "size": 255105,
-      "sha256": "bc47ab88841edd6a0cfd7a0f7846f6f944c9639c965798353eebfc771f5be983",
+      "size": 256005,
+      "sha256": "454b845956743b779c48dce2e1465d86ba2fac41c130acc1aa8d51639da69197",
       "obfuscated": true
     },
     {
@@ -1053,8 +1053,8 @@
     },
     {
       "path": "backend/dist/services/product-save-validation.js",
-      "size": 16582,
-      "sha256": "0dcc12041950e07aaf8052682684cc15c57f99cd9a642da754ab6625601bd7e3",
+      "size": 17074,
+      "sha256": "117a8282ec1df9780f299470733d4a4ae7c641858af9a21b6650e1d2c6b13e53",
       "obfuscated": true
     },
     {
@@ -1161,8 +1161,8 @@
     },
     {
       "path": "backend/dist/services/product-worker.js",
-      "size": 22107,
-      "sha256": "49295228d90886854bd7a83617eda9dc7fdb0d7c0c6fcec62879a069cc91760c",
+      "size": 23478,
+      "sha256": "0eb76dee25c9b29effee995a116b135777316b47f55f7cfc4a55d473c78f97ce",
       "obfuscated": true
     },
     {
@@ -1185,8 +1185,8 @@
     },
     {
       "path": "backend/dist/services/size-execution-context.js",
-      "size": 7186,
-      "sha256": "228ef7f221ae476be9ccef38e1d9dcf1dec4210830ee1267c667f44586a36721",
+      "size": 7063,
+      "sha256": "70adaa635a100e712bff62f0b3c5953848ad3fd29e3738664f5d10abdad14764",
       "obfuscated": true
     },
     {
