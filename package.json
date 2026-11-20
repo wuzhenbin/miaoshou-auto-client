@@ -6,6 +6,7 @@
     "node": ">=22.19.0"
   },
   "scripts": {
+    "sync": "node scripts/sync-client.mjs",
     "browser-open": "npm --prefix client/backend run browser-open",
     "browser-close": "npm --prefix client/backend run browser-close"
   }
