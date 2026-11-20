@@ -18,7 +18,7 @@ function allowedPath(path) {
     return runtimeFiles.has(path)
         || /^backend\/dist\/(?:[a-z0-9-]+\/)*[a-z0-9-]+\.js$/.test(path)
         || /^backend\/migrations\/\d{4}_[a-z0-9_]+\.sql$/.test(path)
-        || /^frontside\/(?:index\.html|favicon\.ico|icon\.jpg|logo\.(?:png|svg))$/.test(path)
+        || /^frontside\/(?:index\.html|favicon\.ico|icon\.jpg|logo(?:-mark)?\.(?:png|svg))$/.test(path)
         || /^frontside\/assets\/[A-Za-z0-9_./-]+\.(?:js|css|png|jpe?g|gif|svg|webp|avif|ico|woff2?|ttf|otf|mp4|webm)$/.test(path)
 }
 

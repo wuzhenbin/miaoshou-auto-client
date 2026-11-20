@@ -51,8 +51,8 @@
     },
     {
       "path": "install-client.mjs",
-      "size": 7131,
-      "sha256": "9e9f732584ae1c7d4fcbcbd0c3aa453f30e1f295fc02b7c89ba92fe8745edf27",
+      "size": 7141,
+      "sha256": "15a3de3f48a4d5e16f25437c570a0bd00864a357fd4dd284f5fa50b6672f36cb",
       "obfuscated": false
     },
     {
@@ -147,8 +147,8 @@
     },
     {
       "path": "backend/dist/cli/local-http-server.js",
-      "size": 7702,
-      "sha256": "cfc4a44e73c54d3d8a9b940609ce1972ecf203c6a8467c3935746557ad7820ee",
+      "size": 7762,
+      "sha256": "1f9253520cfc0db7d033564f33d2242248d4a3ad368d028433057d580cef4ca1",
       "obfuscated": true
     },
     {
