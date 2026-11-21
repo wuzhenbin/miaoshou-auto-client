@@ -95,7 +95,7 @@ cleanup() {
     wait "$backend_pid" "$web_pid" 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM HUP
-for attempt in $(seq 1 30); do
+for attempt in $(seq 1 120); do
     if ! kill -0 "$backend_pid" 2>/dev/null || ! kill -0 "$web_pid" 2>/dev/null; then
         printf '%s\n' 'A client process stopped during startup. See the error above.' >&2
         exit 1
@@ -117,5 +117,16 @@ for attempt in $(seq 1 30); do
     fi
     sleep 1
 done
-printf '%s\n' 'Client startup timed out. See the errors above.' >&2
+backend_status="$(curl --noproxy '*' --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://127.0.0.1:3000/auth/session 2>/dev/null || true)"
+frontend_status="$(curl --noproxy '*' --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://127.0.0.1:8080/ 2>/dev/null || true)"
+printf 'Client startup timed out after 120 seconds. Backend /auth/session: HTTP %s; frontend /: HTTP %s.\n' \
+    "${backend_status:-unreachable}" "${frontend_status:-unreachable}" >&2
+for port in 3000 8080; do
+    listener="$(listener_pid "$port")"
+    if [[ -n "$listener" ]]; then
+        printf 'Port %s listener PID %s: executable=%s directory=%s\n' "$port" "$listener" \
+            "$(readlink "/proc/$listener/exe" 2>/dev/null || printf unknown)" \
+            "$(readlink "/proc/$listener/cwd" 2>/dev/null || printf unknown)" >&2
+    fi
+done
 exit 1
