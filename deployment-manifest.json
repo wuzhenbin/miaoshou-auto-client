@@ -1143,8 +1143,8 @@
     },
     {
       "path": "backend/dist/services/product-task-failure.js",
-      "size": 22599,
-      "sha256": "4cc36929b6f9545dbcee74fbd6a4c56f8fe1bd37c2c09ac04611aeeb628a250f",
+      "size": 23705,
+      "sha256": "9b92224a921c413fd568cbbde6518b2ed7518317936a81fe9bee4af3ce110532",
       "obfuscated": true
     },
     {
@@ -1185,8 +1185,8 @@
     },
     {
       "path": "backend/dist/services/size-execution-context.js",
-      "size": 7063,
-      "sha256": "70adaa635a100e712bff62f0b3c5953848ad3fd29e3738664f5d10abdad14764",
+      "size": 7184,
+      "sha256": "da8a2d8e5922e606279cab2d939e0ed95f6ff20faa0bd20b4283cecaa0c7f57a",
       "obfuscated": true
     },
     {
@@ -1197,14 +1197,14 @@
     },
     {
       "path": "backend/dist/services/size-fill-v2-model.js",
-      "size": 17058,
-      "sha256": "41028a6213179189eabc780d2ecb77431da649f785903729588c42d6472ed9ed",
+      "size": 16367,
+      "sha256": "0dbb7de1a8c687011d8b562f3b742a3ad7336ef5fccc84e8b380490fcb9da56a",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/size-fill-v2-source-parameters.js",
-      "size": 10636,
-      "sha256": "1b0722605269b85911e0dbcc41e6fa017c7addac9be177778ed34d77f9185455",
+      "size": 11222,
+      "sha256": "c0c68f47fec8f3a4bd4e92ef1e69ee6c4ad05cf1ab3eda7e2213e007f8091a2f",
       "obfuscated": true
     },
     {
@@ -1275,8 +1275,8 @@
     },
     {
       "path": "backend/dist/services/size-template-browser-automation.js",
-      "size": 121860,
-      "sha256": "d593164c4c13d1218848c2389fcdaabce0723790655d3cce7174934d1b9b2bc2",
+      "size": 122477,
+      "sha256": "324a3f3c22b0240efbdda6982a2b93c819744abac0a8bd0b1034482de5171aa9",
       "obfuscated": true
     },
     {
@@ -1329,8 +1329,8 @@
     },
     {
       "path": "backend/dist/services/size-template-components.js",
-      "size": 85526,
-      "sha256": "0f0f97d61e03d790560e46b4a84fbc773e923e750fada51ef73567fe887b87ee",
+      "size": 86901,
+      "sha256": "6a1c7112072de190dae2013e79788b4e000fe4670a466e333816900a9e82bd01",
       "obfuscated": true
     },
     {
@@ -1347,8 +1347,8 @@
     },
     {
       "path": "backend/dist/services/size-template-data-extraction.js",
-      "size": 41707,
-      "sha256": "db6ec6a20b17e7f4d46a7b1659b78a577626e76785d208d6cb4c6e74b2aaa981",
+      "size": 42445,
+      "sha256": "542a94578c148f611806e8904bf90fafd2005fadeb4f69596a31fd89c54c61de",
       "obfuscated": true
     },
     {
