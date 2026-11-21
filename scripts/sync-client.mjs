@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const repo = fileURLToPath(new URL("../", import.meta.url))
-const managed = [".gitattributes", "README.md", "deployment-manifest.json",
+const managed = [".gitattributes", "package.json", "README.md", "deployment-manifest.json",
     "run-client.cmd", "run-client.sh", "install-client.cmd", "install-client.ps1", "install-client.sh", "install-client-user.sh", "install-client.mjs",
     "install-client.command", "install-client-mac.sh", "frontside", "backend"]
 const sha256 = data => createHash("sha256").update(data).digest("hex")
@@ -56,24 +56,30 @@ async function verify(directory, files) {
     if (manifest.schemaVersion !== "miaoshou-deployment-v1" || !Array.isArray(manifest.files)) {
         throw new Error("打包校验清单无效，请先在源项目执行 npm run package:client")
     }
-    // package.json belongs to this repository's sync tooling and is intentionally
-    // preserved instead of being replaced by the deployment artifact.
-    const records = new Map(manifest.files.filter(record => record.path !== "package.json").map(record => [record.path, record]))
-    if (records.size !== files.length) throw new Error("产物文件数量与打包清单不符")
+    const records = new Map(manifest.files.map(record => [record.path, record]))
+    if (records.size !== manifest.files.length || records.size !== files.length) throw new Error("产物文件数量与打包清单不符")
     for (const file of files) {
         const record = records.get(file.relative)
         if (!record || record.size !== file.data.length || record.sha256 !== sha256(file.data)) throw new Error(`产物校验失败：${file.relative}`)
         if (/^backend\/(?:dist\/.+\.js|poc\/.+\.mjs)$/.test(file.relative) && record.obfuscated !== true) throw new Error(`后端代码缺少混淆记录：${file.relative}`)
         if (/\.(?:js|mjs|css)$/.test(file.relative) && /(?:sourceMappingURL\s*=|sourceURL\s*=)/.test(file.data.toString("utf8"))) throw new Error(`产物含源码映射引用：${file.relative}`)
     }
-    return data
+    return manifest
 }
 
 async function sync(source) {
     const targetRoot = await realpath(repo)
     if (await realpath(run("git", ["rev-parse", "--show-toplevel"])) !== targetRoot) throw new Error("客户端仓库目录必须是 Git 仓库根目录")
     const files = await collect(source)
-    const manifestData = await verify(source, files)
+    const manifest = await verify(source, files)
+    const packageFile = files.find(file => file.relative === "package.json")
+    const packageRecord = manifest.files.find(record => record.path === "package.json")
+    const releasePackage = JSON.parse(packageFile.data)
+    releasePackage.scripts.sync = "node scripts/sync-client.mjs"
+    packageFile.data = Buffer.from(JSON.stringify(releasePackage, null, 2) + "\n")
+    packageRecord.size = packageFile.data.length
+    packageRecord.sha256 = sha256(packageFile.data)
+    const manifestData = Buffer.from(JSON.stringify(manifest, null, 2) + "\n")
     const staging = await mkdtemp(join(dirname(repo), ".miaoshou-client-sync-"))
     try {
         const all = [...files, { relative: "deployment-manifest.json", data: manifestData, mode: 0o644 },
