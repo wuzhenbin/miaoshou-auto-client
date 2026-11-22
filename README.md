@@ -1,9 +1,9 @@
 # 妙手自动化部署目录
 
 本目录是客户端生产产物，不含业务源码或已填写的配置。
-当前交付目标：原生 Windows；双击 install-client-native.cmd / run-client-native.cmd，卸载使用 uninstall-client-native.cmd。
-macOS 双击 install-client.command。首次安装只输入管理员生成的一次性配对码。
-安装脚本检查并安装运行依赖，在客户电脑生成私有配置和数据库角色；不会启动两个业务浏览器或执行商品任务。
+当前交付目标：Windows + WSL2；双击 install-client.cmd / run-client.cmd，卸载使用 uninstall-client.cmd。
+macOS 双击 install-client.command。首次安装由管理员按项目文档手动准备依赖并输入一次性配对码。
+本目录只提供运行入口，不执行源码构建、依赖下载或数据库初始化；不会启动两个业务浏览器或执行商品任务。
 安装前从项目部署指南确认目标数据和现有服务；不要在业务任务执行中切换版本。
 根目录无 npm 依赖；手工部署所需依赖、数据库和服务配置见 backend/README.md。
 在本目录由用户手动执行：
