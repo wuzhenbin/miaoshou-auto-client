@@ -9,8 +9,8 @@
     },
     {
       "path": "README.md",
-      "size": 1320,
-      "sha256": "87ae0dce1cb92d788b188e542dc60d098db2748dec8303c55f06d53749bc8265",
+      "size": 1021,
+      "sha256": "9fa6096da36e5214343c38e18c464b934d38905f92d31951d182faf2d71b79cd",
       "obfuscated": false
     },
     {
@@ -33,8 +33,8 @@
     },
     {
       "path": "install-client-native.ps1",
-      "size": 3632,
-      "sha256": "bca5747be9abc2b1fa391b923454edd2711c4f8ebd3d3e637d13bb8162b9068a",
+      "size": 4857,
+      "sha256": "cb09d9d038b1c519c4738ff12825fbd55ab9a7345349f61213c0e81f6133e75c",
       "obfuscated": false
     },
     {

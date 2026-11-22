@@ -3,7 +3,29 @@ $ErrorActionPreference = 'Stop'
 if (-not $InstallRoot) { $InstallRoot = $Source }
 
 function Fail([string]$message) { Write-Error $message; exit 2 }
-if (-not (Get-Command node.exe -ErrorAction SilentlyContinue)) { Fail '原生 Windows 客户端需要 Node.js 22.19.0 或更高版本。' }
+function Refresh-Path() {
+    $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+}
+function Ensure-Node() {
+    Refresh-Path
+    $node = Get-Command node.exe -ErrorAction SilentlyContinue
+    $valid = $false
+    if ($node) {
+        try { $valid = ([version]((& node.exe --version).TrimStart('v'))) -ge [version]'22.19.0' } catch { $valid = $false }
+    }
+    if ($valid) { return }
+    if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+        Fail '未找到合格的 Node.js，且系统没有 winget。请安装 Node.js 24 LTS 后重新运行。'
+    }
+    Write-Host '正在通过 winget 安装 Node.js 24 LTS...'
+    & winget.exe install --id OpenJS.NodeJS.LTS -e --source winget --accept-source-agreements --accept-package-agreements
+    if ($LASTEXITCODE -ne 0) { Fail 'Node.js 自动安装失败，请手动安装 Node.js 24 LTS 后重新运行。' }
+    Refresh-Path
+    $node = Get-Command node.exe -ErrorAction SilentlyContinue
+    if (-not $node) { Fail 'Node.js 已安装但当前进程尚未发现 node.exe，请关闭窗口后重新运行安装器。' }
+    try { if (([version]((& node.exe --version).TrimStart('v'))) -lt [version]'22.19.0') { Fail 'Node.js 版本仍低于 22.19.0。' } } catch { Fail '无法读取 Node.js 版本。' }
+}
+Ensure-Node
 if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) { Fail '未找到 npm，请安装与 Node.js 匹配的 npm。' }
 if (-not (Get-Command pg_isready.exe -ErrorAction SilentlyContinue) -or -not (Get-Command psql.exe -ErrorAction SilentlyContinue)) {
     Fail '原生 Windows 客户端需要已安装并加入 PATH 的 PostgreSQL 客户端工具（pg_isready、psql）及 pgvector 服务端扩展。'
