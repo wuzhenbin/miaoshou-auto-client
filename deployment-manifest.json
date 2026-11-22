@@ -135,8 +135,8 @@
     },
     {
       "path": "backend/dist/app.js",
-      "size": 58559,
-      "sha256": "8cbea8366b4c2b369d474598c66e95b9513413ab73ee18b8fc0f4c7f001b867a",
+      "size": 57782,
+      "sha256": "501a34d6b7dad9c0e909824b902caa9e945d69dce4944e980e4263a7faa3517f",
       "obfuscated": true
     },
     {
@@ -639,8 +639,8 @@
     },
     {
       "path": "backend/dist/services/miaoshou.js",
-      "size": 23167,
-      "sha256": "c785b0f902638d2137b094bc2979fd10c6f96e8eeadfb207e51f327a77381b82",
+      "size": 23437,
+      "sha256": "baceb5592b641731f8f99207105eb0ffc7cf0621089ba1c859cafc68656289a1",
       "obfuscated": true
     },
     {
@@ -729,8 +729,8 @@
     },
     {
       "path": "backend/dist/services/product-automation-control.js",
-      "size": 8815,
-      "sha256": "f7970976be60e655e8538ce5e5665a33a2e4d1669e9110cb4b459fddc2f19aa1",
+      "size": 9034,
+      "sha256": "8ac31f3ee928c79a9424effaa3b3b0631f0aa5fb32984cdccc7b394ac7a2a6b8",
       "obfuscated": true
     },
     {
@@ -843,8 +843,8 @@
     },
     {
       "path": "backend/dist/services/product-drafts.js",
-      "size": 17015,
-      "sha256": "a159572c31bc0bae1d6d7a5dd1ad336dc804fdab9a6207da61df89afe077ebd6",
+      "size": 16410,
+      "sha256": "f4a09621d33f06d3558e184c8901f7e09998dc428aa70d47773193dc122d4ceb",
       "obfuscated": true
     },
     {
@@ -873,14 +873,14 @@
     },
     {
       "path": "backend/dist/services/product-execution.js",
-      "size": 256496,
-      "sha256": "dc1edd48ee846ae28c2b8fda6a87865a0f7f77aab9b8be7500e4826b3e432a08",
+      "size": 258216,
+      "sha256": "0e24444a4448c55f69d994f7b9cf95a8de58479dcf22567642e8708ff6c76bc5",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/product-global-retry.js",
-      "size": 20551,
-      "sha256": "b3027aa65c68ede03cddf47bd19f6712f733b331138e03abdb83c19f64f944f8",
+      "size": 20707,
+      "sha256": "d242a54b54e9871c39c350fec8257b9a67909726d0373bad96fe81676815d781",
       "obfuscated": true
     },
     {
@@ -909,8 +909,8 @@
     },
     {
       "path": "backend/dist/services/product-options.js",
-      "size": 38450,
-      "sha256": "ebaacf74c575174f1708274c891284ea03f5a6340c02a1939c0eb5f0cd730905",
+      "size": 38494,
+      "sha256": "dd2f3ee9ea69b99af5bb23d3de4df067647df9360cbf1277d0a22e91abcd67b1",
       "obfuscated": true
     },
     {
@@ -951,8 +951,8 @@
     },
     {
       "path": "backend/dist/services/product-queries.js",
-      "size": 35005,
-      "sha256": "46782e910af1c34b6ae50abcf99f990e6cb72e7c9a3f85c3f7c6eb0a3a4595d6",
+      "size": 34166,
+      "sha256": "342736196d65cccff5e8739f351aac40a7f629e3e1b75b35a65b7ca3f2d3daba",
       "obfuscated": true
     },
     {
@@ -1029,8 +1029,8 @@
     },
     {
       "path": "backend/dist/services/product-save-preflight.js",
-      "size": 6884,
-      "sha256": "5b64dccb8ca4c8dc01a742fd6c5509b7f4f985174a5732dc89348c0f7ea2cf19",
+      "size": 6274,
+      "sha256": "c3feb4c3af9c31b4ed8fcfd55702cd6660156064192bd596fb770537a007edee",
       "obfuscated": true
     },
     {
@@ -1053,8 +1053,8 @@
     },
     {
       "path": "backend/dist/services/product-save-validation.js",
-      "size": 17074,
-      "sha256": "117a8282ec1df9780f299470733d4a4ae7c641858af9a21b6650e1d2c6b13e53",
+      "size": 16331,
+      "sha256": "6e4d1c5cafd21ce5d5a6e1dae78d4fce922523667d070323423ab3a5bf25d304",
       "obfuscated": true
     },
     {
@@ -1157,6 +1157,12 @@
       "path": "backend/dist/services/product-upstream-failure.js",
       "size": 3881,
       "sha256": "cb5e3bcb16a9a1353dae51171fe6ef4af07c913af57c0d88e745f432bc59bed3",
+      "obfuscated": true
+    },
+    {
+      "path": "backend/dist/services/product-workbench-visibility.js",
+      "size": 2703,
+      "sha256": "3a15db33eebb497b8fdef83142b7565c8aa6e55e0c67bec1dde3488ee721d97e",
       "obfuscated": true
     },
     {
