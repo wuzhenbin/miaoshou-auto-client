@@ -33,8 +33,8 @@
     },
     {
       "path": "install-client-native.ps1",
-      "size": 4857,
-      "sha256": "cb09d9d038b1c519c4738ff12825fbd55ab9a7345349f61213c0e81f6133e75c",
+      "size": 5833,
+      "sha256": "89ad364ee8643eac46b8a3ddb92297254462540928f2f6488bb004bbed259e00",
       "obfuscated": false
     },
     {

@@ -14,12 +14,25 @@ function Ensure-Node() {
         try { $valid = ([version]((& node.exe --version).TrimStart('v'))) -ge [version]'22.19.0' } catch { $valid = $false }
     }
     if ($valid) { return }
-    if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
-        Fail '未找到合格的 Node.js，且系统没有 winget。请安装 Node.js 24 LTS 后重新运行。'
+    if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+        Write-Host '正在通过 winget 安装 Node.js 24 LTS...'
+        & winget.exe install --id OpenJS.NodeJS.LTS -e --source winget --accept-source-agreements --accept-package-agreements
+        if ($LASTEXITCODE -ne 0) { Fail 'Node.js 自动安装失败。' }
+    } else {
+        Write-Host '系统没有 winget，正在从 nodejs.org 下载并安装 Node.js 24 LTS...'
+        try {
+            $release = (Invoke-RestMethod -UseBasicParsing -Uri 'https://nodejs.org/dist/index.json' -TimeoutSec 30 |
+                Where-Object { $_.version -like 'v24.*' -and $_.lts } | Select-Object -First 1)
+            if (-not $release) { throw '无法找到 Node.js 24 LTS 发布版本。' }
+            $installer = Join-Path ([IO.Path]::GetTempPath()) "node-$($release.version)-x64.msi"
+            Invoke-WebRequest -UseBasicParsing -Uri "https://nodejs.org/dist/$($release.version)/node-$($release.version)-x64.msi" -OutFile $installer -TimeoutSec 120
+            $process = Start-Process -FilePath msiexec.exe -ArgumentList @('/i', $installer, '/qn', '/norestart') -Wait -PassThru
+            if ($process.ExitCode -notin @(0, 3010)) { throw "Node.js 安装程序退出码 $($process.ExitCode)。" }
+            Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
+        } catch {
+            Fail "Node.js 自动下载或安装失败：$($_.Exception.Message)"
+        }
     }
-    Write-Host '正在通过 winget 安装 Node.js 24 LTS...'
-    & winget.exe install --id OpenJS.NodeJS.LTS -e --source winget --accept-source-agreements --accept-package-agreements
-    if ($LASTEXITCODE -ne 0) { Fail 'Node.js 自动安装失败，请手动安装 Node.js 24 LTS 后重新运行。' }
     Refresh-Path
     $node = Get-Command node.exe -ErrorAction SilentlyContinue
     if (-not $node) { Fail 'Node.js 已安装但当前进程尚未发现 node.exe，请关闭窗口后重新运行安装器。' }
