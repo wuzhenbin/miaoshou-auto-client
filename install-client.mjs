@@ -5,6 +5,7 @@ import { lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/
 import { dirname, join, resolve } from "node:path"
 
 const hash = data => createHash("sha256").update(data).digest("hex")
+const textFile = path => /(?:^|\/)(?:[^/]+\.(?:cmd|md|json|ps1|sh|mjs|js|sql)|package-lock\.json)$/.test(path)
 const defaultServerUrl = "https://103.112.1.161/"
 const required = ["CLIENT_LOGIN_TOKEN", "SERVER_MODEL_READ_TOKEN", "SERVER_MODEL_DATA_KEY",
     "OSS_BUCKET", "OSS_REGION", "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET"]
@@ -35,8 +36,12 @@ async function checkedFiles(directory) {
         names.add(record.path)
         const path = join(directory, record.path)
         const info = await lstat(path)
-        if (!info.isFile() || info.isSymbolicLink() || info.size !== record.size
-            || hash(await readFile(path)) !== record.sha256) throw new Error(`Release file failed verification: ${record.path}`)
+        if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Release file failed verification: ${record.path}`)
+        const data = await readFile(path)
+        const exact = info.size === record.size && hash(data) === record.sha256
+        const normalized = textFile(record.path)
+            && hash(Buffer.from(data.toString("utf8").replaceAll("\r\n", "\n"), "utf8")) === record.sha256
+        if (!exact && !normalized) throw new Error(`Release file failed verification: ${record.path}`)
     }
     return { files: manifest.files, manifestData }
 }
