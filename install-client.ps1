@@ -34,13 +34,13 @@ if ($LASTEXITCODE -ne 0 -or -not $linuxSource) { throw 'Cannot locate the releas
 if ($LASTEXITCODE -ne 0) { throw 'The release files are not accessible from WSL2.' }
 $linuxUser = (& wsl.exe -d $distribution --exec id -un | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $linuxUser -or $linuxUser -eq 'root') { throw 'Cannot identify the normal WSL user.' }
-$nodePath = (& wsl.exe -d $distribution --exec bash -lc 'command -v node' | Out-String).Trim()
-& wsl.exe -d $distribution -u root --exec bash "$linuxSource/install-client.sh" "$linuxSource" "$linuxUser" "$nodePath"
+$nodePath = (& wsl.exe -d $distribution --exec /bin/bash -lc 'command -v node' | Out-String).Trim()
+& wsl.exe -d $distribution -u root --exec /bin/bash "$linuxSource/install-client.sh" "$linuxSource" "$linuxUser" "$nodePath"
 if ($LASTEXITCODE -ne 0) { throw 'Client installation in WSL2 failed. See the messages above.' }
 $taskName = 'Miaoshou Client WSL'
 if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 }
 
-& wsl.exe -d $distribution --exec bash "$linuxSource/run-client.sh" "$linuxSource"
+& wsl.exe -d $distribution --exec /bin/bash "$linuxSource/run-client.sh" "$linuxSource"
 if ($LASTEXITCODE -ne 0) { throw 'Client stopped. See the messages above, then run run-client.cmd to restart.' }

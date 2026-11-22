@@ -14,5 +14,5 @@ $script = (& wsl.exe -d $distribution --exec wslpath -u $PSScriptRoot | Out-Stri
 if (-not $script) { throw '无法定位 WSL2 卸载脚本。' }
 $args = @($script + '/uninstall-client.sh')
 if ($RemoveData) { $args += '--remove-data' }
-& wsl.exe -d $distribution --exec bash @args
+& wsl.exe -d $distribution --exec /bin/bash @args
 if ($LASTEXITCODE -ne 0) { throw 'WSL2 客户端卸载失败。' }
