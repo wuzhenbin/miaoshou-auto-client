@@ -3,68 +3,56 @@
   "files": [
     {
       "path": "package.json",
-      "size": 325,
-      "sha256": "aff7c79bee79def7cc802e7effbec2d9984b5f50f0aa3d83fa994abc6d6028bd",
+      "size": 311,
+      "sha256": "7a4f63362f11170a8ebc10f4175035813930b525b8e9df8d036ad75ee2ba71a2",
       "obfuscated": false
     },
     {
       "path": "README.md",
-      "size": 1189,
-      "sha256": "046a83f6610703c5f522c79e678c84a59e733730a61fe2f4cf0cf930ba6c20b4",
+      "size": 1320,
+      "sha256": "87ae0dce1cb92d788b188e542dc60d098db2748dec8303c55f06d53749bc8265",
       "obfuscated": false
     },
     {
-      "path": "run-client.cmd",
-      "size": 123,
-      "sha256": "ea7491a586c660f84f3abadbf167305e66a54fe2eca5cc0278d718fe944dba74",
+      "path": "run-client-native.cmd",
+      "size": 129,
+      "sha256": "1e7e2621f9696e829cd46e08e3134d3d8ef1ff3031fb7e01d0d9b4dbc454b1e0",
       "obfuscated": false
     },
     {
-      "path": "run-client.sh",
-      "size": 6850,
-      "sha256": "31c316d1d9838fcef01ff5beaa4a7fae3b264a6c95730f323d140a1893f38242",
+      "path": "run-client-native.ps1",
+      "size": 2715,
+      "sha256": "4329851e8e5709753a267c8b62c4b685c216f1f25f52711303df4bc0746be4ca",
       "obfuscated": false
     },
     {
-      "path": "install-client.cmd",
-      "size": 123,
-      "sha256": "ea7491a586c660f84f3abadbf167305e66a54fe2eca5cc0278d718fe944dba74",
+      "path": "install-client-native.cmd",
+      "size": 149,
+      "sha256": "d09acd7409861ae52ec0ff4d8411f0baf006aa21ceb356c73cd7807e256c2a18",
       "obfuscated": false
     },
     {
-      "path": "install-client.ps1",
-      "size": 2319,
-      "sha256": "5ffccfa1b6c4801acd8b786806741fd68970e0b9234b3bad414594e8ee534208",
+      "path": "install-client-native.ps1",
+      "size": 3629,
+      "sha256": "d2361f99094a174a15fa5bd8e7c364fd2218516992c949d700001fd63fd97c30",
       "obfuscated": false
     },
     {
-      "path": "install-client.sh",
-      "size": 7044,
-      "sha256": "03c4cd4d142152a2cd25ccb618e41c768acfcd737cc5a3b842ed2926b500a828",
+      "path": "uninstall-client-native.cmd",
+      "size": 135,
+      "sha256": "01fa1833186217e658c9e8808559ace49ed5f377a8abe617b45d9fb8014c2ade",
       "obfuscated": false
     },
     {
-      "path": "install-client-user.sh",
-      "size": 747,
-      "sha256": "cd5ddc3694a00f8d7fd0e8bac38bee9ddec640b9b49ed54b7739d477e6d2f5ce",
+      "path": "uninstall-client-native.ps1",
+      "size": 1233,
+      "sha256": "7ebc53a290f601ab9c860040a1cae0f74546044d686927e083c4bb8f2c09b1ab",
       "obfuscated": false
     },
     {
       "path": "install-client.mjs",
-      "size": 7141,
-      "sha256": "15a3de3f48a4d5e16f25437c570a0bd00864a357fd4dd284f5fa50b6672f36cb",
-      "obfuscated": false
-    },
-    {
-      "path": "install-client.command",
-      "size": 93,
-      "sha256": "6741695239be4244895970001300da30ab6a3d59238d0ecc4d1aa6e19f2b78d5",
-      "obfuscated": false
-    },
-    {
-      "path": "install-client-mac.sh",
-      "size": 5402,
-      "sha256": "00bc93cca9a8b4c0e48fd3f6335ad499bd43ed4f1f9ef305a5b042e54f7bcbba",
+      "size": 7382,
+      "sha256": "c35cb3ff395dae2dc08f1810dd4b9e2c1261a96364979b6ca72df3cb202d50d9",
       "obfuscated": false
     },
     {
