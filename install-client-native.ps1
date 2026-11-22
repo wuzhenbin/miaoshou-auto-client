@@ -1,4 +1,4 @@
-param([string]$Source = $PSScriptRoot, [string]$InstallRoot = '')
+﻿param([string]$Source = $PSScriptRoot, [string]$InstallRoot = '')
 $ErrorActionPreference = 'Stop'
 if (-not $InstallRoot) { $InstallRoot = $Source }
 

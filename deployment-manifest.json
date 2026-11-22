@@ -21,8 +21,8 @@
     },
     {
       "path": "run-client-native.ps1",
-      "size": 2715,
-      "sha256": "4329851e8e5709753a267c8b62c4b685c216f1f25f52711303df4bc0746be4ca",
+      "size": 2718,
+      "sha256": "eb1b44a3e1184a3373f29915d8c7888992064dca5b853e1f7db852635afef647",
       "obfuscated": false
     },
     {
@@ -33,8 +33,8 @@
     },
     {
       "path": "install-client-native.ps1",
-      "size": 3629,
-      "sha256": "d2361f99094a174a15fa5bd8e7c364fd2218516992c949d700001fd63fd97c30",
+      "size": 3632,
+      "sha256": "bca5747be9abc2b1fa391b923454edd2711c4f8ebd3d3e637d13bb8162b9068a",
       "obfuscated": false
     },
     {
@@ -45,8 +45,8 @@
     },
     {
       "path": "uninstall-client-native.ps1",
-      "size": 1233,
-      "sha256": "7ebc53a290f601ab9c860040a1cae0f74546044d686927e083c4bb8f2c09b1ab",
+      "size": 1236,
+      "sha256": "bdb19b3a5bef83580ec6fedc8bb62ce4a0b5777627838c43923af30b6946bb43",
       "obfuscated": false
     },
     {

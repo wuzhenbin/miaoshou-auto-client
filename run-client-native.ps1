@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Release,
     [string]$Config,
     [string]$InstallRoot = $PSScriptRoot

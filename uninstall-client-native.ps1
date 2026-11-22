@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$InstallRoot = $PSScriptRoot,
     [switch]$RemoveData
 )
