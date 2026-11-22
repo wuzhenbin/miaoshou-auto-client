@@ -32,6 +32,8 @@ $linuxSource = (& wsl.exe -d $distribution --exec wslpath -u $PSScriptRoot | Out
 if ($LASTEXITCODE -ne 0 -or -not $linuxSource) { throw 'Cannot locate the release files in WSL2.' }
 & wsl.exe -d $distribution --exec test -f "$linuxSource/deployment-manifest.json"
 if ($LASTEXITCODE -ne 0) { throw 'The release files are not accessible from WSL2.' }
+& wsl.exe -d $distribution --exec sed -i 's/\r$//' "$linuxSource/install-client.sh" "$linuxSource/run-client.sh"
+if ($LASTEXITCODE -ne 0) { throw 'Cannot normalize WSL2 shell scripts to Unix line endings.' }
 $linuxUser = (& wsl.exe -d $distribution --exec id -un | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $linuxUser -or $linuxUser -eq 'root') { throw 'Cannot identify the normal WSL user.' }
 $nodePath = (& wsl.exe -d $distribution --exec /bin/bash -lc 'command -v node' | Out-String).Trim()
