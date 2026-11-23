@@ -86,15 +86,15 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-Da5LqDoL.css",
-      "size": 68115,
-      "sha256": "b98778da8d5541e6815874023715e98cff24725e0ece8a812862a89eb9e335a3",
+      "path": "frontside/assets/index-Bqv-TD1-.js",
+      "size": 1492785,
+      "sha256": "46389d85a0cb63a956a7d61f333b0c890d7d02591f10bf8a0e3922b42d91cec9",
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-TJv7h3rv.js",
-      "size": 1492589,
-      "sha256": "f2300962877498f901e9e97318fd0b1e2ba304f57af4809adaafcfa95fbfa8b9",
+      "path": "frontside/assets/index-Da5LqDoL.css",
+      "size": 68115,
+      "sha256": "b98778da8d5541e6815874023715e98cff24725e0ece8a812862a89eb9e335a3",
       "obfuscated": false
     },
     {
@@ -112,7 +112,7 @@
     {
       "path": "frontside/index.html",
       "size": 468,
-      "sha256": "cd7a46e3c863f2c1dffcd664b8a86048900464eb5e9239e5f329b8d900b1649b",
+      "sha256": "f4a308d5b1821be3ff3779f0ba99e701423a355527a540a9722e99c4b455d845",
       "obfuscated": false
     },
     {
