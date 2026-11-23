@@ -74,15 +74,27 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-C3tajY_L.js",
-      "size": 1492616,
-      "sha256": "5b8b83982dfb17118ab228a496ebc4e62308226dd6732d7749306fa1f0848fd5",
+      "path": "install-client.command",
+      "size": 93,
+      "sha256": "6741695239be4244895970001300da30ab6a3d59238d0ecc4d1aa6e19f2b78d5",
+      "obfuscated": false
+    },
+    {
+      "path": "install-client-mac.sh",
+      "size": 5402,
+      "sha256": "00bc93cca9a8b4c0e48fd3f6335ad499bd43ed4f1f9ef305a5b042e54f7bcbba",
       "obfuscated": false
     },
     {
       "path": "frontside/assets/index-Da5LqDoL.css",
       "size": 68115,
       "sha256": "b98778da8d5541e6815874023715e98cff24725e0ece8a812862a89eb9e335a3",
+      "obfuscated": false
+    },
+    {
+      "path": "frontside/assets/index-TJv7h3rv.js",
+      "size": 1492589,
+      "sha256": "f2300962877498f901e9e97318fd0b1e2ba304f57af4809adaafcfa95fbfa8b9",
       "obfuscated": false
     },
     {
@@ -100,7 +112,7 @@
     {
       "path": "frontside/index.html",
       "size": 468,
-      "sha256": "451f5f443fc23b48a34000be6d31358a2418224f6c15f47471327e8b978d4026",
+      "sha256": "cd7a46e3c863f2c1dffcd664b8a86048900464eb5e9239e5f329b8d900b1649b",
       "obfuscated": false
     },
     {
@@ -153,8 +165,8 @@
     },
     {
       "path": "backend/dist/cli/local-http-server.js",
-      "size": 7762,
-      "sha256": "1f9253520cfc0db7d033564f33d2242248d4a3ad368d028433057d580cef4ca1",
+      "size": 8002,
+      "sha256": "05c0d707c7fa2d1f49d5dfba7b19da484315ef40341f4ae3b35497f596f22432",
       "obfuscated": true
     },
     {
@@ -345,8 +357,8 @@
     },
     {
       "path": "backend/dist/routes/client-account.js",
-      "size": 22596,
-      "sha256": "540f508396a48590a3569649842cb8312d1c15301f3eadff37e86f5e6df68373",
+      "size": 22164,
+      "sha256": "a54c6fcad8fec3c0492e6b66004c5e91093c1d51972a2835d9c72480222b74bb",
       "obfuscated": true
     },
     {
@@ -465,8 +477,8 @@
     },
     {
       "path": "backend/dist/server.js",
-      "size": 6891,
-      "sha256": "9d83736b25044205f6a2996583206441cefb2dc1931cee95cf262624fd566cbb",
+      "size": 7224,
+      "sha256": "a3ac400ec14051565770e614528078a11eecc0297b3eab2f3aa317360d29c222",
       "obfuscated": true
     },
     {
@@ -507,8 +519,8 @@
     },
     {
       "path": "backend/dist/services/background-browser-page.js",
-      "size": 3095,
-      "sha256": "0d1b9db6d11656b52b55af68a2bc156b5ce6c3f4001aa161400e6b6c201dd5e9",
+      "size": 3458,
+      "sha256": "26471ae2e5a56603f521ed5bf795edcf673a6171d5a0410ed20b9f54f0dee0bf",
       "obfuscated": true
     },
     {
@@ -543,8 +555,8 @@
     },
     {
       "path": "backend/dist/services/client-account-store.js",
-      "size": 9369,
-      "sha256": "7fca628521528fdcd45f3a111c584e8afb45279c2ee64d2083507f0e27a7ae81",
+      "size": 11194,
+      "sha256": "e7e903c3c113b6361285e11d86b772023564fa0b4124d87315e2288bc39f9186",
       "obfuscated": true
     },
     {
@@ -1737,8 +1749,8 @@
     },
     {
       "path": "backend/dist/utils/runtime-path.js",
-      "size": 2530,
-      "sha256": "c652f874433985590d3167d967b8cf764c441893c0144f6e8aa7dcc92fb4799c",
+      "size": 2886,
+      "sha256": "f5e36b3453213bfa3c17a8202a529ad1b7145ace0751a399d5c6d96b29b3c497",
       "obfuscated": true
     },
     {
@@ -1755,8 +1767,8 @@
     },
     {
       "path": "backend/dist/utils/shutdown-deadline.js",
-      "size": 3256,
-      "sha256": "6a3be9455ffe6d38d874002c7f577d9868448381537ba672a34d8f3d7525e708",
+      "size": 3526,
+      "sha256": "61788b085a198b993dbbc2f9fe0fbd76aeb65e005efe27418c71beed86dbd8e1",
       "obfuscated": true
     },
     {
@@ -2181,8 +2193,8 @@
     },
     {
       "path": "backend/poc/browser-process.mjs",
-      "size": 11674,
-      "sha256": "09618f4fc13e561bc3ce650f781f464357ef165092d36e8f88efe4508c3ee1b2",
+      "size": 12906,
+      "sha256": "8df072cc5e29f149c05b9bffebe396da69ab64181e6296e1f0c12ce89f0b117e",
       "obfuscated": true
     },
     {
@@ -2199,8 +2211,8 @@
     },
     {
       "path": "backend/poc/size-template-browser-smoke.mjs",
-      "size": 4104,
-      "sha256": "c213769300ff0e4c71241aab4eae770efa558dd0a179f54f62718295f8ec978f",
+      "size": 4240,
+      "sha256": "61d03b1296c72f623e624e51f5fc2270f2b1066258add5ed28d5c8c2cb47cfec",
       "obfuscated": true
     }
   ]
