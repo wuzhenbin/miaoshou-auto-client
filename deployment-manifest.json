@@ -807,8 +807,8 @@
     },
     {
       "path": "backend/dist/services/product-common-inbox.js",
-      "size": 20057,
-      "sha256": "fc0c8551ecc6f3ec5ff85f77963aba025b1f8819a00bab6166e736dbfd4f2378",
+      "size": 20745,
+      "sha256": "a85e3038196680b483a9214bc16da4e95f0c9b34a37275fa601dd36232f65ffe",
       "obfuscated": true
     },
     {
