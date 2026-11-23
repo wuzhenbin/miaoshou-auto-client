@@ -69,14 +69,14 @@
     },
     {
       "path": "install-client.mjs",
-      "size": 8012,
-      "sha256": "5dbcb7b1703a5e330b3ecf74f23c64e0a9d23df77ee73904ad7266416faf86a4",
+      "size": 7842,
+      "sha256": "135febe52bf0746db19aec2e716fb0956e6fe09853c8a52bbc3d2598ff165d91",
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-BQQAHbsY.js",
-      "size": 1492270,
-      "sha256": "cca667bb1439e7e80fedb2ba922de2c77d6b69ba387f24a0c3983504d922fb14",
+      "path": "frontside/assets/index-C3tajY_L.js",
+      "size": 1492616,
+      "sha256": "5b8b83982dfb17118ab228a496ebc4e62308226dd6732d7749306fa1f0848fd5",
       "obfuscated": false
     },
     {
@@ -100,7 +100,7 @@
     {
       "path": "frontside/index.html",
       "size": 468,
-      "sha256": "9eea00f85900f31899206a38d10a5491a27a3024d6293594cb993405da502f00",
+      "sha256": "451f5f443fc23b48a34000be6d31358a2418224f6c15f47471327e8b978d4026",
       "obfuscated": false
     },
     {
@@ -345,8 +345,8 @@
     },
     {
       "path": "backend/dist/routes/client-account.js",
-      "size": 21589,
-      "sha256": "50c49aa6e7d2f39bac648443196bba5e9497c2875e2bf42b6690508655a003c2",
+      "size": 22596,
+      "sha256": "540f508396a48590a3569649842cb8312d1c15301f3eadff37e86f5e6df68373",
       "obfuscated": true
     },
     {

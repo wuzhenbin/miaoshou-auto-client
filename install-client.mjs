@@ -19,7 +19,7 @@ function verifiedData(path, data, record) {
 const defaultServerUrl = "https://103.112.1.161/"
 const required = ["CLIENT_LOGIN_TOKEN", "SERVER_MODEL_READ_TOKEN", "SERVER_MODEL_DATA_KEY",
     "OSS_BUCKET", "OSS_REGION", "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET"]
-const runtimeFiles = new Set(["package.json", "README.md", "run-client.cmd", "run-client.sh", "run-client-native.cmd", "run-client-native.ps1", "install-client.cmd", "install-client.ps1", "install-client-native.cmd", "install-client-native.ps1", "uninstall-client.cmd", "uninstall-client.ps1", "uninstall-client.sh", "uninstall-client-native.cmd", "uninstall-client-native.ps1",
+const runtimeFiles = new Set(["package.json", "README.md", "run-client.cmd", "run-client.sh", "install-client.cmd", "install-client.ps1", "uninstall-client.cmd", "uninstall-client.ps1", "uninstall-client.sh",
     "install-client.sh", "install-client-user.sh", "install-client.mjs", "install-client.command", "install-client-mac.sh",
     "backend/package.json", "backend/package-lock.json", "backend/README.md", "backend/.env.example",
     "backend/config/product-editor.jsonc", "backend/config/category-index.json",
