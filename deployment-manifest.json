@@ -357,8 +357,8 @@
     },
     {
       "path": "backend/dist/routes/client-account.js",
-      "size": 22164,
-      "sha256": "a54c6fcad8fec3c0492e6b66004c5e91093c1d51972a2835d9c72480222b74bb",
+      "size": 22620,
+      "sha256": "ba12d565bfb5bbae8aaf6f0f8c62d15c7dfd0dfff5be8e3c8a9f41b7a47897f5",
       "obfuscated": true
     },
     {
@@ -2193,8 +2193,8 @@
     },
     {
       "path": "backend/poc/browser-process.mjs",
-      "size": 12737,
-      "sha256": "da331430b230d607306c2c5148fef5f80e15e98b8d2c5d9c94e6c6b1a4336d2d",
+      "size": 12883,
+      "sha256": "da6b2c81d19b5e06b9f91f52a6b896b59708f368f7d42429ff92c545c891114f",
       "obfuscated": true
     },
     {
