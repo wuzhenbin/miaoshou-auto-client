@@ -2193,8 +2193,8 @@
     },
     {
       "path": "backend/poc/browser-process.mjs",
-      "size": 13081,
-      "sha256": "6103c0f3ccac10f329cba9f2e41bffae78942eee475e3ed2ee422f7dbd599a30",
+      "size": 12737,
+      "sha256": "da331430b230d607306c2c5148fef5f80e15e98b8d2c5d9c94e6c6b1a4336d2d",
       "obfuscated": true
     },
     {
