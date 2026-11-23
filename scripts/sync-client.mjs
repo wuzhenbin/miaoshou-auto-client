@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { lstat, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, writeFile } from "node:fs/promises"
-import { basename, dirname, join, resolve } from "node:path"
+import { lstat, mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const repo = fileURLToPath(new URL("../", import.meta.url))
@@ -147,55 +147,5 @@ async function sync(source) {
     console.log(`客户端产物已同步并推送：${branch} ${run("git", ["rev-parse", "--short", "HEAD"])}`)
 }
 
-const args = process.argv.slice(2)
-if (args.length !== 0 && (args.length !== 2 || args[0] !== "--source")) throw new Error("用法：npm run sync -- [--source <项目根目录、dist 或 dist/wsl2 产物目录>]")
-const sourceArg = args[1] ?? "../miaoshou-auto/dist"
-const requested = resolve(repo, sourceArg)
-
-async function hasManifest(directory) {
-    try {
-        const info = await lstat(join(directory, "deployment-manifest.json"))
-        return info.isFile()
-    } catch (error) {
-        if (error.code !== "ENOENT") throw error
-        return false
-    }
-}
-
-async function findSource(directory) {
-    const directCandidates = ["wsl2", "wsl"]
-    if (["wsl2", "wsl"].includes(basename(directory))) return await hasManifest(directory) ? directory : undefined
-    for (const relative of directCandidates) {
-        const candidate = relative ? join(directory, relative) : directory
-        if (await hasManifest(candidate)) return candidate
-    }
-
-    let entries
-    try { entries = await readdir(directory, { withFileTypes: true }) }
-    catch (error) {
-        if (error.code === "ENOENT") return undefined
-        throw error
-    }
-    const versionDirectories = entries
-        .filter(entry => entry.isDirectory() && !entry.isSymbolicLink())
-        .map(entry => entry.name)
-        .sort((left, right) => right.localeCompare(left, undefined, { numeric: true }))
-    for (const version of versionDirectories) {
-        for (const target of directCandidates) {
-            const candidate = join(directory, version, target)
-            if (await hasManifest(candidate)) return candidate
-        }
-    }
-    return undefined
-}
-
-const sourceRoots = sourceArg === "dist" || sourceArg.endsWith("/dist")
-    ? [requested]
-    : [join(requested, "dist"), requested]
-let source
-for (const root of sourceRoots) {
-    source = await findSource(root)
-    if (source) break
-}
-if (!source) throw new Error(`找不到 WSL 客户端部署产物清单，请传入项目根目录、dist 或 dist/wsl2 产物目录：${sourceArg}`)
-await sync(source)
+if (process.argv.length !== 2) throw new Error("用法：npm run sync")
+await sync(resolve(repo, "../miaoshou-auto/dist/wsl2"))
