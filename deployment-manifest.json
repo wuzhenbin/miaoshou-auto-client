@@ -69,8 +69,8 @@
     },
     {
       "path": "install-client.mjs",
-      "size": 7785,
-      "sha256": "bf99c3f682e05629d45a3cb796f083798793f85e05fbc2c66f456959e5248c97",
+      "size": 8012,
+      "sha256": "5dbcb7b1703a5e330b3ecf74f23c64e0a9d23df77ee73904ad7266416faf86a4",
       "obfuscated": false
     },
     {

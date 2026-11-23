@@ -5,7 +5,17 @@ import { lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/
 import { dirname, join, resolve } from "node:path"
 
 const hash = data => createHash("sha256").update(data).digest("hex")
-const textFile = path => /(?:^|\/)(?:[^/]+\.(?:cmd|md|json|ps1|sh|mjs|js|sql)|package-lock\.json)$/.test(path)
+const textFile = path => /\.(?:cmd|command|md|json|jsonc|ps1|sh|mjs|js|sql|css|html|svg)$/.test(path)
+    || path === "backend/.env.example"
+
+function verifiedData(path, data, record) {
+    if (data.length === record.size && hash(data) === record.sha256) return data
+    if (textFile(path)) {
+        const normalized = Buffer.from(data.toString("utf8").replaceAll("\r\n", "\n"), "utf8")
+        if (normalized.length === record.size && hash(normalized) === record.sha256) return normalized
+    }
+    throw new Error(`Release file failed verification: ${path}`)
+}
 const defaultServerUrl = "https://103.112.1.161/"
 const required = ["CLIENT_LOGIN_TOKEN", "SERVER_MODEL_READ_TOKEN", "SERVER_MODEL_DATA_KEY",
     "OSS_BUCKET", "OSS_REGION", "OSS_ACCESS_KEY_ID", "OSS_ACCESS_KEY_SECRET"]
@@ -38,10 +48,7 @@ async function checkedFiles(directory) {
         const info = await lstat(path)
         if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Release file failed verification: ${record.path}`)
         const data = await readFile(path)
-        const exact = info.size === record.size && hash(data) === record.sha256
-        const normalized = textFile(record.path)
-            && hash(Buffer.from(data.toString("utf8").replaceAll("\r\n", "\n"), "utf8")) === record.sha256
-        if (!exact && !normalized) throw new Error(`Release file failed verification: ${record.path}`)
+        verifiedData(record.path, data, record)
     }
     return { files: manifest.files, manifestData }
 }
@@ -60,7 +67,8 @@ async function prepare(source, destination) {
         for (const record of files) {
             const path = join(staging, record.path)
             await mkdir(dirname(path), { recursive: true })
-            await writeFile(path, await readFile(join(source, record.path)), { mode: 0o644 })
+            const data = verifiedData(record.path, await readFile(join(source, record.path)), record)
+            await writeFile(path, data, { mode: 0o644 })
         }
         await writeFile(join(staging, "deployment-manifest.json"), manifestData, { mode: 0o644 })
         await checkedFiles(staging)
