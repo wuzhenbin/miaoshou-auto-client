@@ -357,8 +357,8 @@
     },
     {
       "path": "backend/dist/routes/client-account.js",
-      "size": 22620,
-      "sha256": "ba12d565bfb5bbae8aaf6f0f8c62d15c7dfd0dfff5be8e3c8a9f41b7a47897f5",
+      "size": 22422,
+      "sha256": "209c22ae1d6b35cfa7a3736abc46e81577e2b2566e9e57d162e6a09eb27b939e",
       "obfuscated": true
     },
     {
@@ -489,8 +489,8 @@
     },
     {
       "path": "backend/dist/services/automation-1688-login.js",
-      "size": 14428,
-      "sha256": "10f8c0f267888b5179540d8c49e06673229c78e5ba97b7747e1d2f8b949db92a",
+      "size": 14358,
+      "sha256": "6ef5a28ef9268fa7bc84bbab152601dad34de60861a4f57b4f16286377f11a7a",
       "obfuscated": true
     },
     {
@@ -501,14 +501,14 @@
     },
     {
       "path": "backend/dist/services/automation-browser.js",
-      "size": 4814,
-      "sha256": "c8d1106c18f7d25707db22328ffc7d4052a1bab29f5fc80c5095337653589bbd",
+      "size": 4728,
+      "sha256": "7c2b7a781762725da2a73a6c6f04735e1a86c283a5156e138a9e86899f1ec951",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/automation-temu-login.js",
-      "size": 4655,
-      "sha256": "a560419d7f7ffe88d218b00fd894981f852134b3a398647dec1492c2c1107f39",
+      "size": 4500,
+      "sha256": "10a85fe0abece572ac84d5ddb0cb2977adcab9834e7f05a69f6498d52639516f",
       "obfuscated": true
     },
     {
@@ -525,8 +525,8 @@
     },
     {
       "path": "backend/dist/services/browser-cdp-host.js",
-      "size": 2198,
-      "sha256": "b552e08c26db0b33d12d1216a894123d455bb55b6e71687dde6463fdc052bcb7",
+      "size": 3705,
+      "sha256": "668ded6dd1fe89350e4feaaa89e9058960795c5bb5b4bda6057e632355ae4a2b",
       "obfuscated": true
     },
     {
@@ -1305,8 +1305,8 @@
     },
     {
       "path": "backend/dist/services/size-template-browser-connection.js",
-      "size": 4500,
-      "sha256": "f5954c4fcefe984e4f438ead48d711c0c5dadd784fc16d4622909d71a70bbbda",
+      "size": 3363,
+      "sha256": "4937cfbf4a51603ff1072ebe4bc3f5a2f9724639fce01a40103a4cb1d79a7382",
       "obfuscated": true
     },
     {
@@ -1599,8 +1599,8 @@
     },
     {
       "path": "backend/dist/services/temu-source-size.js",
-      "size": 12614,
-      "sha256": "83234c26c90182e62e788f44930f63b5f48d657ff96bd0150ce7a2ce1420caf4",
+      "size": 12591,
+      "sha256": "20687f093e3e693ba90523e1d49c58c9a05759dc9ad180c24233859f52aefe65",
       "obfuscated": true
     },
     {
