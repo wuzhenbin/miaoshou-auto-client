@@ -1305,8 +1305,8 @@
     },
     {
       "path": "backend/dist/services/size-template-browser-connection.js",
-      "size": 3375,
-      "sha256": "d4781be4d1901b3db989aae1ff68a28dce0b036a20c68d080122f023c1e6f4a9",
+      "size": 4500,
+      "sha256": "f5954c4fcefe984e4f438ead48d711c0c5dadd784fc16d4622909d71a70bbbda",
       "obfuscated": true
     },
     {
