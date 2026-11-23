@@ -741,8 +741,8 @@
     },
     {
       "path": "backend/dist/services/product-batches.js",
-      "size": 16411,
-      "sha256": "64b425b45fb95309dca6ff0e6e38977724f6e52f599c485c4d92f5b06ec33404",
+      "size": 16212,
+      "sha256": "3ab1cf58eeb22cf80c807d435f25c2a117c933030eba51bec0b51e0be0efa56e",
       "obfuscated": true
     },
     {
@@ -777,8 +777,8 @@
     },
     {
       "path": "backend/dist/services/product-color-images.js",
-      "size": 54896,
-      "sha256": "c861a8cc62514d48b2e3a33285f517decb509b556ac54c273432ada65ac4ce83",
+      "size": 54898,
+      "sha256": "7de6ace3cefbdb051dd4d2522e1903c55e78cf72572cf75d557f49a1f5630284",
       "obfuscated": true
     },
     {
@@ -861,8 +861,8 @@
     },
     {
       "path": "backend/dist/services/product-editor-config.js",
-      "size": 23265,
-      "sha256": "c059e2a2a32666518f14ded6f30686141b2877c4153722af50740355138ae27b",
+      "size": 23815,
+      "sha256": "a897b6fd42725784d385316bd8edd45ff3396be9237772bf0a554be7732ec78f",
       "obfuscated": true
     },
     {
@@ -879,8 +879,8 @@
     },
     {
       "path": "backend/dist/services/product-execution.js",
-      "size": 258216,
-      "sha256": "0e24444a4448c55f69d994f7b9cf95a8de58479dcf22567642e8708ff6c76bc5",
+      "size": 257848,
+      "sha256": "129c9c3d6a507292ccabaa5ee7ded736238ac52a8933fc0003bc7b03d140de5a",
       "obfuscated": true
     },
     {
@@ -1077,8 +1077,8 @@
     },
     {
       "path": "backend/dist/services/product-semi-managed-defaults.js",
-      "size": 6560,
-      "sha256": "0751b648e08ae1a6fff0481b24d78cb5c1d470b640fa01663d7051948da6a7ee",
+      "size": 6502,
+      "sha256": "4b6a8e80a674ba61d7a27e2274f1eb565e15d05e259ef501a5ef8a059e07edfa",
       "obfuscated": true
     },
     {
@@ -1191,8 +1191,8 @@
     },
     {
       "path": "backend/dist/services/runtime-settings.js",
-      "size": 3310,
-      "sha256": "df8cd1d8c54c07e8583e11576c4ddfaaf23bbb4ede84ce7581b14ff1f79ed3f7",
+      "size": 3352,
+      "sha256": "7acf18dcedf8a13db5328145826874dd2598bd35ca680484caa14c1b7b4faba1",
       "obfuscated": true
     },
     {
