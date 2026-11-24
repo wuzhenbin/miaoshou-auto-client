@@ -86,9 +86,9 @@
       "obfuscated": false
     },
     {
-      "path": "frontside/assets/index-1LPP4Xu_.js",
-      "size": 1492774,
-      "sha256": "e297bfa6638f96963b3d75ef149743dca81e1b05ad6f37bfa3569b5113157841",
+      "path": "frontside/assets/index-CyFYkTXp.js",
+      "size": 1491693,
+      "sha256": "5cedf1ab39df36da8b19fd18645833688857c35c0db2f9e108d946ac73f469bb",
       "obfuscated": false
     },
     {
@@ -112,7 +112,7 @@
     {
       "path": "frontside/index.html",
       "size": 468,
-      "sha256": "310238c2bd127811051146e4b69b1135a8380490451a68dbb47b6b21dfae65d0",
+      "sha256": "d254949b3de3900f60d546eae2762bfef73741f52f7b72fb30581f79962dd425",
       "obfuscated": false
     },
     {
@@ -357,8 +357,8 @@
     },
     {
       "path": "backend/dist/routes/client-account.js",
-      "size": 22422,
-      "sha256": "209c22ae1d6b35cfa7a3736abc46e81577e2b2566e9e57d162e6a09eb27b939e",
+      "size": 22164,
+      "sha256": "a54c6fcad8fec3c0492e6b66004c5e91093c1d51972a2835d9c72480222b74bb",
       "obfuscated": true
     },
     {
@@ -489,8 +489,8 @@
     },
     {
       "path": "backend/dist/services/automation-1688-login.js",
-      "size": 14358,
-      "sha256": "6ef5a28ef9268fa7bc84bbab152601dad34de60861a4f57b4f16286377f11a7a",
+      "size": 14428,
+      "sha256": "10f8c0f267888b5179540d8c49e06673229c78e5ba97b7747e1d2f8b949db92a",
       "obfuscated": true
     },
     {
@@ -501,14 +501,14 @@
     },
     {
       "path": "backend/dist/services/automation-browser.js",
-      "size": 4728,
-      "sha256": "7c2b7a781762725da2a73a6c6f04735e1a86c283a5156e138a9e86899f1ec951",
+      "size": 4814,
+      "sha256": "c8d1106c18f7d25707db22328ffc7d4052a1bab29f5fc80c5095337653589bbd",
       "obfuscated": true
     },
     {
       "path": "backend/dist/services/automation-temu-login.js",
-      "size": 4500,
-      "sha256": "10a85fe0abece572ac84d5ddb0cb2977adcab9834e7f05a69f6498d52639516f",
+      "size": 4655,
+      "sha256": "a560419d7f7ffe88d218b00fd894981f852134b3a398647dec1492c2c1107f39",
       "obfuscated": true
     },
     {
@@ -525,8 +525,8 @@
     },
     {
       "path": "backend/dist/services/browser-cdp-host.js",
-      "size": 3705,
-      "sha256": "668ded6dd1fe89350e4feaaa89e9058960795c5bb5b4bda6057e632355ae4a2b",
+      "size": 2198,
+      "sha256": "b552e08c26db0b33d12d1216a894123d455bb55b6e71687dde6463fdc052bcb7",
       "obfuscated": true
     },
     {
@@ -807,8 +807,8 @@
     },
     {
       "path": "backend/dist/services/product-common-inbox.js",
-      "size": 20745,
-      "sha256": "a85e3038196680b483a9214bc16da4e95f0c9b34a37275fa601dd36232f65ffe",
+      "size": 20057,
+      "sha256": "fc0c8551ecc6f3ec5ff85f77963aba025b1f8819a00bab6166e736dbfd4f2378",
       "obfuscated": true
     },
     {
@@ -1305,8 +1305,8 @@
     },
     {
       "path": "backend/dist/services/size-template-browser-connection.js",
-      "size": 3363,
-      "sha256": "4937cfbf4a51603ff1072ebe4bc3f5a2f9724639fce01a40103a4cb1d79a7382",
+      "size": 3375,
+      "sha256": "d4781be4d1901b3db989aae1ff68a28dce0b036a20c68d080122f023c1e6f4a9",
       "obfuscated": true
     },
     {
@@ -1599,8 +1599,8 @@
     },
     {
       "path": "backend/dist/services/temu-source-size.js",
-      "size": 12591,
-      "sha256": "20687f093e3e693ba90523e1d49c58c9a05759dc9ad180c24233859f52aefe65",
+      "size": 12614,
+      "sha256": "83234c26c90182e62e788f44930f63b5f48d657ff96bd0150ce7a2ce1420caf4",
       "obfuscated": true
     },
     {
@@ -2169,14 +2169,14 @@
     },
     {
       "path": "backend/package-lock.json",
-      "size": 105097,
-      "sha256": "5c658002c6e9df7f6725b33907d8933891dfe2347a837c58ef5945a787a9fa9e",
+      "size": 106734,
+      "sha256": "74515a59bb1fb25e30c64025ce4282e83f39a8ab97b133b046e2c0e609f0a26a",
       "obfuscated": false
     },
     {
       "path": "backend/package.json",
       "size": 1701,
-      "sha256": "a3f63d487da2a857ed24555475c10bb8e59ae9403246cdeaeecf93e99cbfb822",
+      "sha256": "f59ed8a375a70d01eafb400033a86795cdae2c3e5cf727209e7af800560a03bc",
       "obfuscated": false
     },
     {
@@ -2193,8 +2193,8 @@
     },
     {
       "path": "backend/poc/browser-process.mjs",
-      "size": 12883,
-      "sha256": "da6b2c81d19b5e06b9f91f52a6b896b59708f368f7d42429ff92c545c891114f",
+      "size": 12906,
+      "sha256": "8df072cc5e29f149c05b9bffebe396da69ab64181e6296e1f0c12ce89f0b117e",
       "obfuscated": true
     },
     {
